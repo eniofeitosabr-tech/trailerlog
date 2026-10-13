@@ -1,0 +1,531 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Trailer Log - Configurações</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* CONFIGURAÇÕES - TRAILER LOG */
+
+        .painel-configuracoes {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .cabecalho-config h1 {
+            color: #0b1f46;
+            font-size: 30px;
+            margin: 0 0 8px;
+        }
+
+        .cabecalho-config p {
+            color: #64748b;
+            margin: 0 0 30px;
+            font-size: 15px;
+        }
+
+        .secao-config {
+            margin-top: 20px;
+        }
+
+        .secao-config h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .cartao-limpeza {
+            background: #fff7f7;
+            border: 1px solid #fecaca;
+            border-radius: 14px;
+            padding: 25px;
+        }
+
+        .cartao-limpeza h3 {
+            color: #b91c1c;
+            margin: 0 0 12px;
+            font-size: 19px;
+        }
+
+        .cartao-limpeza p {
+            color: #475569;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .btn-limpar,
+        body.dark-mode .btn-limpar {
+            background: #dc2626;
+            color: white;
+            padding: 13px 22px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            margin: 15px 0 0;
+        }
+
+        .btn-limpar:hover,
+        body.dark-mode .btn-limpar:hover {
+            background: #b91c1c;
+        }
+
+        /* MODAL DE CONFIRMAÇÃO */
+
+        .modal-confirmacao {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-caixa {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            text-align: center;
+            box-sizing: border-box;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.25);
+        }
+
+        .modal-icone-aviso {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: #fee2e2;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: bold;
+        }
+
+        .modal-caixa h2 {
+            color: #1e293b;
+            font-size: 22px;
+            margin: 0 0 14px;
+        }
+
+        .modal-caixa p {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .modal-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-acoes button {
+            width: 100%;
+            min-height: 45px;
+            margin: 0;
+            padding: 10px;
+            border-radius: 9px;
+            font-weight: 600;
+        }
+
+        .btn-cancelar,
+        body.dark-mode .btn-cancelar {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-confirmar,
+        body.dark-mode .btn-confirmar {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-confirmar:hover,
+        body.dark-mode .btn-confirmar:hover {
+            background: #b91c1c;
+        }
+
+        /* MODO ESCURO */
+
+        body.dark-mode .painel-configuracoes {
+            background: #0f172a;
+            border: 1px solid #334155;
+        }
+
+        body.dark-mode .cabecalho-config h1,
+        body.dark-mode .secao-config h2 {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .cabecalho-config p {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .cartao-limpeza {
+            background: #371b25;
+            border-color: #7f1d1d;
+        }
+
+        body.dark-mode .cartao-limpeza h3 {
+            color: #fca5a5;
+        }
+
+        body.dark-mode .cartao-limpeza p {
+            color: #cbd5e1;
+        }
+
+        body.dark-mode .modal-caixa {
+            background: #1e293b;
+        }
+
+        body.dark-mode .modal-caixa h2 {
+            color: white;
+        }
+
+        body.dark-mode .modal-caixa p {
+            color: #cbd5e1;
+        }
+
+        /* ADAPTAÇÃO PARA CELULAR */
+
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+            }
+
+            .menu-lateral {
+                width: 100%;
+                min-width: 0;
+                min-height: auto;
+            }
+
+            .conteudo-principal {
+                padding: 12px;
+            }
+
+            .painel-configuracoes {
+                padding: 18px;
+            }
+
+            .modal-caixa {
+                padding: 24px 18px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <!-- MENU LATERAL -->
+
+    <aside class="menu-lateral">
+
+        <div class="logo-menu">
+            <h2>🚛 Trailer Log</h2>
+            <p>Controle de Frota</p>
+        </div>
+
+        <nav>
+
+            <a href="index.html">
+                📝 Registrar
+            </a>
+
+            <a href="historico.html">
+                🕘 Histórico
+            </a>
+
+            <a href="historico.html">
+                📊 Relatórios
+            </a>
+
+            <a href="configuracoes.html" class="menu-ativo">
+                ⚙️ Configurações
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+
+    <main class="conteudo-principal">
+
+        <!-- IMAGEM DO CAMINHÃO -->
+
+        <section class="topo-app">
+            <div class="faixa-caminhao">
+                <div class="overlay-topo">
+                    <h1>Trailer Log</h1>
+                    <p>Controle de trucks e trailers</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAINEL CONFIGURAÇÕES -->
+
+        <section class="painel-configuracoes">
+
+            <header class="cabecalho-config">
+                <h1>Configurações</h1>
+                <p>Gerencie as opções e os dados do Trailer Log.</p>
+            </header>
+
+            <!-- MODO CLARO / ESCURO -->
+
+            <button
+                type="button"
+                class="botao-tema"
+                onclick="alternarTema()"
+                aria-label="Alternar modo claro e escuro">
+
+                <span>🌙</span>
+
+                <span class="interruptor-tema">
+                    <span class="bolinha-tema"></span>
+                </span>
+
+            </button>
+
+            <!-- GERENCIAMENTO DE DADOS -->
+
+            <div class="secao-config">
+
+                <h2>Gerenciamento de Dados</h2>
+
+                <div class="cartao-limpeza">
+
+                    <h3>🗑️ Limpar Todos os Registros</h3>
+
+                    <p>
+                        Exclua todos os registros de Caminhões,
+                        Trailers e Jornadas armazenados neste
+                        navegador.
+                    </p>
+
+                    <p>
+                        Esta operação é permanente e não poderá
+                        ser desfeita sem uma cópia de segurança.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="btn-limpar"
+                        onclick="abrirConfirmacao()">
+
+                        🗑️ Limpar Todos os Registros
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- JANELA DE CONFIRMAÇÃO -->
+
+<div
+    id="modalConfirmacao"
+    class="modal-confirmacao"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloConfirmacao">
+
+    <div class="modal-caixa">
+
+        <div class="modal-icone-aviso">!</div>
+
+        <h2 id="tituloConfirmacao">
+            Tem certeza?
+        </h2>
+
+        <p>
+            Todos os registros de Caminhões, Trailers
+            e Jornadas serão apagados permanentemente.
+        </p>
+
+        <p>
+            Esta ação não poderá ser desfeita.
+        </p>
+
+        <div class="modal-acoes">
+
+            <button
+                type="button"
+                class="btn-cancelar"
+                onclick="fecharConfirmacao()">
+
+                Cancelar
+
+            </button>
+
+            <button
+                type="button"
+                class="btn-confirmar"
+                onclick="confirmarLimpeza()">
+
+                Sim, apagar tudo
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- JANELA DE SUCESSO -->
+
+<div
+    id="modalResultado"
+    class="modal-confirmacao"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloResultado">
+
+    <div class="modal-caixa">
+
+        <div
+            class="modal-icone-aviso"
+            style="background:#dcfce7; color:#16a34a;">
+            ✓
+        </div>
+
+        <h2 id="tituloResultado">
+            Registros apagados com sucesso!
+        </h2>
+
+        <p>Trailer Log</p>
+
+        <button
+            type="button"
+            onclick="fecharResultado()">
+
+            OK
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// ==================================
+// MODO CLARO E ESCURO
+// ==================================
+
+function alternarTema() {
+
+    document.body.classList.toggle("dark-mode");
+}
+
+
+// ==================================
+// ABRIR CONFIRMAÇÃO
+// ==================================
+
+function abrirConfirmacao() {
+
+    document.getElementById("modalConfirmacao")
+        .style.display = "flex";
+
+    document.querySelector(
+        "#modalConfirmacao .btn-cancelar"
+    ).focus();
+}
+
+
+// ==================================
+// CANCELAR EXCLUSÃO
+// ==================================
+
+function fecharConfirmacao() {
+
+    document.getElementById("modalConfirmacao")
+        .style.display = "none";
+}
+
+
+// ==================================
+// EXCLUIR DADOS DO TRAILER LOG
+// ==================================
+
+function confirmarLimpeza() {
+
+    // APAGAR SOMENTE AS CHAVES DO APLICATIVO
+
+    const chaves = [
+        "trailersSalvos",
+        "trucksCadastrados",
+        "jornadaAtiva",
+        "jornadasSalvas"
+    ];
+
+    try {
+
+        chaves.forEach(function(chave) {
+            localStorage.removeItem(chave);
+        });
+
+        fecharConfirmacao();
+
+        document.getElementById("modalResultado")
+            .style.display = "flex";
+
+    } catch (erro) {
+
+        console.error("Erro ao limpar registros:", erro);
+
+        fecharConfirmacao();
+
+        document.getElementById("tituloResultado")
+            .textContent = "Não foi possível limpar os registros.";
+
+        document.getElementById("modalResultado")
+            .style.display = "flex";
+    }
+}
+
+
+// ==================================
+// FECHAR MENSAGEM DE RESULTADO
+// ==================================
+
+function fecharResultado() {
+
+    document.getElementById("modalResultado")
+        .style.display = "none";
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,997 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Trailer Log</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <!-- MENU LATERAL -->
+
+    <aside class="menu-lateral">
+
+        <div class="logo-menu">
+            <h2>🚛 Trailer Log</h2>
+            <p>Controle de Frota</p>
+        </div>
+
+        <nav>
+            <a href="index.html" class="menu-ativo">
+                📝 Registrar
+            </a>
+
+            <a href="historico.html">
+                🕘 Histórico
+            </a>
+
+            <a href="historico.html">
+                📊 Relatórios
+            </a>
+
+            <a href="configuracoes.html">
+            ⚙️ Configurações
+        </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+
+    <main class="conteudo-principal">
+
+        <!-- IMAGEM DO CAMINHÃO -->
+
+        <section class="topo-app">
+            <div class="faixa-caminhao">
+                <div class="overlay-topo">
+                    <h1>Trailer Log</h1>
+                    <p>Controle de trucks e trailers</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAINEL DE REGISTRO -->
+
+        <div class="painel-registro">
+
+            <header class="cabecalho-pagina">
+                <h1>Novo Registro</h1>
+                <p>
+                    Informe o caminhão e o trailer
+                    que você está utilizando
+                </p>
+            </header>
+
+            <!-- MODO CLARO E ESCURO -->
+
+            <button
+                type="button"
+                class="botao-tema"
+                onclick="alternarTema()"
+                aria-label="Alternar modo claro e escuro">
+
+                <span>🌙</span>
+
+                <span class="interruptor-tema">
+                    <span class="bolinha-tema"></span>
+                </span>
+
+            </button>
+
+            <!-- CARTÕES DE CADASTRO -->
+
+            <div class="linha-cadastros">
+
+                <!-- CAMINHÃO -->
+
+                <div class="cartao-truck">
+
+                    <h2>🚛 Registrar Caminhão</h2>
+
+                    <div class="campos-truck">
+
+                        <div class="campo">
+                            <label for="truck">
+                                Número do Caminhão
+                            </label>
+
+                            <input
+                                type="text"
+                                id="truck"
+                                placeholder="Digite o número">
+                        </div>
+
+                        <div class="campo">
+                            <label for="truckCondition">
+                                Condição do Caminhão
+                            </label>
+
+                            <select
+                                id="truckCondition"
+                                onchange="mostrarObservacoesTruck()">
+
+                                <option value="Excelente">
+                                    Excelente
+                                </option>
+
+                                <option value="Bom">
+                                    Bom
+                                </option>
+
+                                <option value="Regular">
+                                    Regular
+                                </option>
+
+                                <option value="Ruim">
+                                    Ruim
+                                </option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- OBSERVAÇÕES DO CAMINHÃO -->
+
+                    <div
+                        id="areaObservacoesTruck"
+                        style="display:none;">
+
+                        <p>Observações do Truck:</p>
+
+                        <textarea
+                            id="observacoesTruck"
+                            rows="4"
+                            cols="35"></textarea>
+
+                    </div>
+
+                </div>
+
+                <!-- TRAILER -->
+
+                <div class="cartao-trailer">
+
+                    <h2>
+                        <svg
+                            width="32"
+                            height="24"
+                            viewBox="0 0 64 40"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                            stroke-linejoin="round"
+                            style="vertical-align:middle; margin-right:8px;"
+                            aria-hidden="true">
+
+                            <rect
+                                x="3" y="5"
+                                width="56" height="23"
+                                rx="2"/>
+
+                            <line x1="3" y1="28" x2="59" y2="28"/>
+                            <circle cx="40" cy="33" r="5"/>
+                            <circle cx="53" cy="33" r="5"/>
+                            <line x1="3" y1="33" x2="15" y2="33"/>
+
+                        </svg>
+
+                        Registrar Trailer
+                    </h2>
+
+                    <div class="campos-trailer">
+
+                        <div class="campo">
+                            <label for="trailer">
+                                Número do Trailer
+                            </label>
+
+                            <input
+                                type="text"
+                                id="trailer"
+                                placeholder="Digite o número">
+                        </div>
+
+                        <div class="campo">
+                            <label for="condition">
+                                Condição da Carga
+                            </label>
+
+                            <select id="condition">
+                                <option value="Empty">Vazio</option>
+                                <option value="Loaded">Carregado</option>
+                                <option value="With Pallets">Com Pallets</option>
+                            </select>
+                        </div>
+
+                        <div class="campo">
+                            <label for="trailerCondition">
+                                Condição do Trailer
+                            </label>
+
+                            <select
+                                id="trailerCondition"
+                                onchange="mostrarObservacoes()">
+
+                                <option value="Good">Bom</option>
+                                <option value="Needs Attention">
+                                    Precisa de Atenção
+                                </option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- OBSERVAÇÕES DO TRAILER -->
+
+                    <div
+                        id="areaObservacoes"
+                        style="display:none;">
+
+                        <p>Observações:</p>
+
+                        <textarea
+                            id="Observacoes"
+                            rows="4"
+                            cols="35"></textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- CADASTRAR TRUCK -->
+            <!-- BOTÃO OCULTO PARA USO FUTURO
+
+            <button
+                type="button"
+                onclick="cadastrarTruck()">
+                🚛 Cadastrar Truck
+            </button>
+
+            -->
+
+            <!-- INICIAR JORNADA -->
+
+            <button
+                type="button"
+                onclick="iniciarJornada()">
+
+                ▶ Iniciar Jornada
+
+            </button>
+
+            <!-- BOTÃO ADICIONAR/TROCAR TRAILER -->
+
+            <button
+                type="button"
+                id="btnTrocarTrailer"
+                onclick="trocarTrailer()"
+                style="display:none;">
+
+                🔄 Adicionar/Trocar Trailer
+
+            </button>
+
+            <!-- BOTÃO FINALIZAR JORNADA -->
+
+            <button
+                type="button"
+                id="btnFinalizarJornada"
+                onclick="finalizarJornada()"
+                style="display:none;">
+
+                ⏹ Finalizar Jornada
+
+            </button>
+
+            <div id="saida"></div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- JANELA PERSONALIZADA -->
+
+<div
+    id="modalSucesso"
+    class="modal-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloModal">
+
+    <div class="modal-conteudo">
+
+        <div class="modal-icone">
+            ✓
+        </div>
+
+        <h2 id="tituloModal">
+            Cadastro efetuado com sucesso!
+        </h2>
+
+        <p>Trailer Log</p>
+
+        <button
+            type="button"
+            onclick="fecharModal()">
+
+            OK
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// ==================================
+// MODO CLARO E ESCURO
+// ==================================
+
+function alternarTema() {
+    document.body.classList.toggle("dark-mode");
+}
+
+
+// ==================================
+// JANELA PERSONALIZADA
+// ==================================
+
+function mostrarModal(mensagem, tipo = "sucesso") {
+
+    const modal = document.getElementById("modalSucesso");
+    const titulo = modal.querySelector("h2");
+    const icone = modal.querySelector(".modal-icone");
+
+    titulo.textContent = mensagem;
+
+    if (tipo === "aviso") {
+
+        icone.textContent = "!";
+
+        icone.style.backgroundColor = "#fef3c7";
+        icone.style.color = "#d97706";
+
+    } else {
+
+        icone.textContent = "✓";
+
+        icone.style.backgroundColor = "#dcfce7";
+        icone.style.color = "#16a34a";
+    }
+
+    modal.style.display = "flex";
+
+    const botaoOK = modal.querySelector("button");
+    botaoOK.focus();
+}
+
+
+// ==================================
+// FECHAR JANELA
+// ==================================
+
+function fecharModal() {
+
+    document.getElementById("modalSucesso")
+        .style.display = "none";
+}
+
+
+// ==================================
+// OBSERVAÇÕES DO CAMINHÃO
+// ==================================
+
+function mostrarObservacoesTruck() {
+
+    const condicao =
+        document.getElementById("truckCondition").value;
+
+    const area =
+        document.getElementById("areaObservacoesTruck");
+
+    if (condicao === "Regular" || condicao === "Ruim") {
+        area.style.display = "block";
+    } else {
+        area.style.display = "none";
+    }
+}
+
+
+// ==================================
+// OBSERVAÇÕES DO TRAILER
+// ==================================
+
+function mostrarObservacoes() {
+
+    const condicao =
+        document.getElementById("trailerCondition").value;
+
+    const area =
+        document.getElementById("areaObservacoes");
+
+    if (condicao === "Needs Attention") {
+        area.style.display = "block";
+    } else {
+        area.style.display = "none";
+    }
+}
+
+
+// ==================================
+// CARREGAR REGISTROS EXISTENTES
+// ==================================
+
+let trailersSalvos = JSON.parse(
+    localStorage.getItem("trailersSalvos") || "[]"
+);
+
+
+// ==================================
+// CADASTRAR TRUCK SEPARADAMENTE
+// FUNÇÃO PRESERVADA PARA USO FUTURO
+// ==================================
+
+function cadastrarTruck() {
+
+    const truck =
+        document.getElementById("truck").value.trim();
+
+    const condicao =
+        document.getElementById("truckCondition").value;
+
+    const observacoes =
+        document.getElementById("observacoesTruck").value.trim();
+
+    if (!truck) {
+        mostrarModal("Informe o número do Caminhão!", "aviso");
+        return;
+    }
+
+    const trucksSalvos = JSON.parse(
+        localStorage.getItem("trucksCadastrados") || "[]"
+    );
+
+    const existente = trucksSalvos.find(
+        item => item.numero === truck
+    );
+
+    if (existente) {
+        mostrarModal("Este caminhão já está cadastrado!", "aviso");
+        return;
+    }
+
+    trucksSalvos.push({
+        numero: truck,
+        condicao: condicao,
+        observacoes: observacoes,
+        dataCadastro: new Date().toISOString()
+    });
+
+    localStorage.setItem(
+        "trucksCadastrados",
+        JSON.stringify(trucksSalvos)
+    );
+
+    mostrarModal("Cadastro efetuado com sucesso!");
+
+    document.getElementById("truck").value = "";
+    document.getElementById("truckCondition").selectedIndex = 0;
+    document.getElementById("observacoesTruck").value = "";
+
+    document.getElementById("areaObservacoesTruck")
+        .style.display = "none";
+}
+
+
+// ==================================
+// INICIAR JORNADA
+// ==================================
+
+function iniciarJornada() {
+
+    // VERIFICAR JORNADA ATIVA
+
+    const jornadaAtiva = JSON.parse(
+        localStorage.getItem("jornadaAtiva") || "null"
+    );
+
+    if (jornadaAtiva) {
+
+        mostrarModal(
+            "Já existe uma jornada em andamento!",
+            "aviso"
+        );
+
+        atualizarBotoesJornada();
+        return;
+    }
+
+    // NÚMEROS
+
+    const truck =
+        document.getElementById("truck").value.trim();
+
+    const trailer =
+        document.getElementById("trailer").value.trim();
+
+    // VALIDAR CAMINHÃO
+
+    if (!truck) {
+
+        mostrarModal(
+            "Informe o número do Caminhão!",
+            "aviso"
+        );
+
+        return;
+    }
+
+    // VALIDAR TRAILER
+
+    
+
+    // CONDIÇÕES
+
+    const condicaoTruck =
+        document.getElementById("truckCondition").value;
+
+    const condicaoCarga =
+        document.getElementById("condition")
+            .selectedOptions[0].text;
+
+    const condicaoTrailer =
+        document.getElementById("trailerCondition")
+            .selectedOptions[0].text;
+
+    const observacoesTruck =
+        document.getElementById("observacoesTruck")
+            .value.trim();
+
+    const observacoesTrailer =
+        document.getElementById("Observacoes")
+            .value.trim();
+
+    const agora = new Date().toISOString();
+
+    // CADASTRO AUTOMÁTICO DO CAMINHÃO
+
+    const trucksCadastrados = JSON.parse(
+        localStorage.getItem("trucksCadastrados") || "[]"
+    );
+
+    const truckExiste = trucksCadastrados.some(
+        item => item.numero === truck
+    );
+
+    if (!truckExiste) {
+
+        trucksCadastrados.push({
+            numero: truck,
+            condicao: condicaoTruck,
+            observacoes: observacoesTruck,
+            dataCadastro: agora
+        });
+
+        localStorage.setItem(
+            "trucksCadastrados",
+            JSON.stringify(trucksCadastrados)
+        );
+    }
+
+    // CRIAR JORNADA
+
+    const jornada = {
+
+        id: agora,
+
+        truck: truck,
+        trailer: trailer,
+
+        inicio: agora,
+
+        condicaoTruck: condicaoTruck,
+        condicaoTrailer: condicaoTrailer,
+        condicaoCarga: condicaoCarga,
+
+        observacoesTruck: observacoesTruck,
+        observacoesTrailer: observacoesTrailer,
+
+        status: "Em andamento"
+
+    };
+
+    // SALVAR JORNADA ATIVA
+
+    localStorage.setItem(
+        "jornadaAtiva",
+        JSON.stringify(jornada)
+    );
+
+   // REGISTRAR TRAILER SOMENTE SE INFORMADO
+
+if (trailer !== "") {
+
+    trailersSalvos.push({
+
+        truck: truck,
+
+        estadoTruck: condicaoTruck,
+        observacoesTruck: observacoesTruck,
+
+        trailer: trailer,
+
+        condition: condicaoCarga,
+        estado: condicaoTrailer,
+
+        observacoes: observacoesTrailer,
+
+        data: agora,
+        jornadaId: jornada.id
+
+    });
+
+    localStorage.setItem(
+        "trailersSalvos",
+        JSON.stringify(trailersSalvos)
+    );
+
+}
+
+    // ATUALIZAR BOTÕES
+
+    atualizarBotoesJornada();
+
+    // CONFIRMAÇÃO PERSONALIZADA
+
+    mostrarModal("Jornada iniciada com sucesso!");
+}
+
+
+// ==================================
+// ADICIONAR / TROCAR TRAILER
+// ==================================
+
+function trocarTrailer() {
+
+    // Verificar jornada ativa
+    let jornada = JSON.parse(
+        localStorage.getItem("jornadaAtiva") || "null"
+    );
+
+    if (!jornada) {
+        mostrarModal(
+            "Inicie uma jornada primeiro!",
+            "aviso"
+        );
+        return;
+    }
+
+    // Obter dados do novo Trailer
+    let trailer = document.getElementById("trailer").value.trim();
+
+    if (!trailer) {
+        mostrarModal(
+            "Informe o número do Trailer!",
+            "aviso"
+        );
+        return;
+    }
+
+    let condicaoCarga =
+        document.getElementById("condition").selectedOptions[0].text;
+
+    let condicaoTrailer =
+        document.getElementById("trailerCondition").selectedOptions[0].text;
+
+    let observacoes =
+        document.getElementById("Observacoes").value.trim();
+
+    let agora = new Date().toISOString();
+
+    // Registrar utilização do Trailer
+    trailersSalvos.push({
+        truck: jornada.truck,
+        estadoTruck: jornada.condicaoTruck,
+        observacoesTruck: jornada.observacoesTruck,
+        trailer: trailer,
+        condition: condicaoCarga,
+        estado: condicaoTrailer,
+        observacoes: observacoes,
+        data: agora,
+        jornadaId: jornada.id
+    });
+
+    localStorage.setItem(
+        "trailersSalvos",
+        JSON.stringify(trailersSalvos)
+    );
+
+    // Atualizar Trailer atual da jornada
+    jornada.trailer = trailer;
+    jornada.condicaoTrailer = condicaoTrailer;
+    jornada.condicaoCarga = condicaoCarga;
+    jornada.observacoesTrailer = observacoes;
+
+    localStorage.setItem(
+        "jornadaAtiva",
+        JSON.stringify(jornada)
+    );
+
+    // Limpar campos do Trailer
+    document.getElementById("trailer").value = "";
+    document.getElementById("condition").selectedIndex = 0;
+    document.getElementById("trailerCondition").selectedIndex = 0;
+    document.getElementById("Observacoes").value = "";
+
+    document.getElementById("areaObservacoes")
+        .style.display = "none";
+
+    // Confirmação
+    mostrarModal("Trailer registrado com sucesso!");
+}
+
+// ==================================
+// FINALIZAR JORNADA
+// ==================================
+
+function finalizarJornada() {
+
+    const jornada = JSON.parse(
+        localStorage.getItem("jornadaAtiva") || "null"
+    );
+
+    if (!jornada) {
+
+        mostrarModal(
+            "Nenhuma jornada em andamento!",
+            "aviso"
+        );
+
+        atualizarBotoesJornada();
+        return;
+    }
+
+    // REGISTRAR ENCERRAMENTO
+
+    jornada.fim = new Date().toISOString();
+    jornada.status = "Finalizada";
+
+    // HISTÓRICO DE JORNADAS
+
+    const jornadas = JSON.parse(
+        localStorage.getItem("jornadasSalvas") || "[]"
+    );
+
+    jornadas.push(jornada);
+
+    localStorage.setItem(
+        "jornadasSalvas",
+        JSON.stringify(jornadas)
+    );
+
+    // ENCERRAR JORNADA ATIVA
+
+    localStorage.removeItem("jornadaAtiva");
+
+    // ATUALIZAR BOTÕES
+
+    atualizarBotoesJornada();
+
+    // CONFIRMAÇÃO PERSONALIZADA
+
+    mostrarModal("Jornada finalizada com sucesso!");
+}
+
+
+// ==================================
+// CONTROLAR BOTÕES DA JORNADA
+// ==================================
+
+function atualizarBotoesJornada() {
+
+    const jornadaAtiva = JSON.parse(
+        localStorage.getItem("jornadaAtiva") || "null"
+    );
+
+    const btnIniciar = document.querySelector(
+        'button[onclick="iniciarJornada()"]'
+    );
+
+    const btnFinalizar = document.getElementById(
+        "btnFinalizarJornada"
+    );
+
+    if (btnIniciar) {
+
+        btnIniciar.style.display =
+            jornadaAtiva ? "none" : "block";
+    }
+
+   if (btnFinalizar) {
+
+    btnFinalizar.style.display =
+        jornadaAtiva ? "block" : "none";
+}
+
+// CONTROLAR BOTÃO ADICIONAR/TROCAR TRAILER
+
+let btnTrocar = document.getElementById(
+    "btnTrocarTrailer"
+);
+
+if (btnTrocar) {
+
+    btnTrocar.style.display =
+        jornadaAtiva ? "block" : "none";
+}
+}
+
+
+// ==================================
+// FUNÇÃO ANTIGA DE REGISTRO
+// PRESERVADA PARA COMPATIBILIDADE
+// ==================================
+
+function Mostrar() {
+
+    const truck =
+        document.getElementById("truck").value.trim();
+
+    if (!truck) {
+        mostrarModal("Informe o número do Caminhão!", "aviso");
+        return;
+    }
+
+    const trailer =
+        document.getElementById("trailer").value.trim();
+
+    if (!trailer) {
+        mostrarModal("Informe o número do Trailer!", "aviso");
+        return;
+    }
+
+    const condition =
+        document.getElementById("condition")
+            .selectedOptions[0].text;
+
+    const estado =
+        document.getElementById("trailerCondition")
+            .selectedOptions[0].text;
+
+    const observacoes =
+        document.getElementById("Observacoes").value;
+
+    const estadoTruck =
+        document.getElementById("truckCondition").value;
+
+    const observacoesTruck =
+        document.getElementById("observacoesTruck").value;
+
+    // CONTAR UTILIZAÇÕES ANTERIORES
+
+    const quantidadeUsos = trailersSalvos.filter(
+        item => item.trailer === trailer
+    ).length;
+
+    const trailerExiste = quantidadeUsos > 0;
+
+    const ultimoRegistro = trailersSalvos
+        .filter(item => item.trailer === trailer)
+        .at(-1);
+
+    // MENSAGEM DE CADASTRO
+
+    if (trailerExiste) {
+
+        mostrarModal("Novo uso registrado com sucesso!");
+
+    } else {
+
+        mostrarModal("Cadastro efetuado com sucesso!");
+
+    }
+
+    // REGISTRAR NO HISTÓRICO
+
+    trailersSalvos.push({
+
+        truck: truck,
+
+        estadoTruck: estadoTruck,
+        observacoesTruck: observacoesTruck,
+
+        trailer: trailer,
+
+        condition: condition,
+        estado: estado,
+
+        observacoes: observacoes,
+
+        data: new Date().toISOString()
+
+    });
+
+    localStorage.setItem(
+        "trailersSalvos",
+        JSON.stringify(trailersSalvos)
+    );
+
+    // LIMPAR CAMPOS
+
+    document.getElementById("trailer").value = "";
+    document.getElementById("condition").selectedIndex = 0;
+    document.getElementById("trailerCondition").selectedIndex = 0;
+    document.getElementById("Observacoes").value = "";
+
+    document.getElementById("areaObservacoes")
+        .style.display = "none";
+
+    document.getElementById("truck").value = "";
+    document.getElementById("truckCondition").selectedIndex = 0;
+    document.getElementById("observacoesTruck").value = "";
+
+    document.getElementById("areaObservacoesTruck")
+        .style.display = "none";
+}
+
+
+// ==================================
+// FUNÇÃO DE HISTÓRICO
+// ==================================
+
+function mostrarHistorico() {
+
+    const historico =
+        document.getElementById("historico");
+
+    if (!historico) {
+        return;
+    }
+
+    historico.innerHTML = "";
+
+    trailersSalvos.forEach(function(item) {
+
+        const p = document.createElement("p");
+
+        p.textContent =
+            "Trailer: " + item.trailer +
+            " | Condição: " + item.condition +
+            " | Estado: " + item.estado;
+
+        historico.appendChild(p);
+
+    });
+}
+
+
+// ==================================
+// INICIALIZAÇÃO DO APLICATIVO
+// ==================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    atualizarBotoesJornada
+);
+
+</script>
+
+</body>
+</html>
