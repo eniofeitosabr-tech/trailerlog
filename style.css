@@ -930,3 +930,434 @@ body.dark-mode #btnFinalizarJornada:hover {
 body.dark-mode #btnTrocarTrailer:hover {
     background-color: #1d4ed8;
 }
+
+/* ETAPA 6 — CRÉDITOS E PÁGINA SOBRE */
+.rodape-creditos {
+    padding: 22px 12px 8px;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+body.dark-mode .rodape-creditos { color: #94a3b8; }
+.sobre-painel {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    max-width: 900px;
+    margin: 0 auto;
+}
+.sobre-painel h1 { color: #0b1f46; margin: 0 0 12px; }
+.sobre-painel h2 { color: #174ea6; font-size: 19px; margin-top: 26px; }
+.sobre-painel p { color: #475569; line-height: 1.75; }
+.sobre-painel .sobre-desenvolvedor {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+.sobre-painel .sobre-desenvolvedor p { margin: 7px 0; }
+body.dark-mode .sobre-painel { background: #0f172a; border: 1px solid #334155; }
+body.dark-mode .sobre-painel h1 { color: #f1f5f9; }
+body.dark-mode .sobre-painel h2 { color: #93c5fd; }
+body.dark-mode .sobre-painel p { color: #cbd5e1; }
+body.dark-mode .sobre-painel .sobre-desenvolvedor { background: #142b49; border-color: #28558a; }
+@media (max-width: 768px) {
+    .sobre-painel { padding: 20px; }
+    .sobre-painel h1 { font-size: 25px; }
+}
+
+
+/* ==================================
+   TRAILER LOG - LAYOUT MOBILE
+   PASSO 1 - MENU RESPONSIVO
+================================== */
+
+@media (max-width: 768px) {
+
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .menu-lateral {
+        width: 100%;
+        min-width: 0;
+        min-height: auto;
+        padding: 12px;
+    }
+
+    .logo-menu {
+        text-align: center;
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .menu-lateral nav a {
+        margin: 0;
+        padding: 12px 8px;
+        justify-content: center;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .conteudo-principal {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - MOBILE
+   IMAGEM NO TOPO E MENU ALINHADO
+========================================== */
+
+@media (max-width: 768px) {
+
+    .app-layout {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .conteudo-principal {
+        display: contents;
+    }
+
+    .topo-app {
+        order: 1;
+        margin: 0;
+        padding: 12px 12px 0;
+        box-sizing: border-box;
+    }
+
+    .faixa-caminhao {
+        height: 170px;
+        background-position: center;
+        border-radius: 12px;
+    }
+
+    .overlay-topo {
+        padding: 18px;
+    }
+
+    .overlay-topo h1 {
+        font-size: 25px;
+    }
+
+    .menu-lateral {
+        order: 2;
+        width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+
+    .logo-menu {
+        display: none;
+    }
+
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .menu-lateral nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 48px;
+        padding: 8px 4px;
+        margin: 0;
+        font-size: 12px;
+        box-sizing: border-box;
+    }
+
+    .painel-registro,
+    .historico-painel,
+    .painel-configuracoes {
+        order: 3;
+        margin: 12px;
+        min-width: 0;
+    }
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: fixed;
+        top: auto;
+        left: auto;
+        right: 16px;
+        bottom: 16px;
+        z-index: 1000;
+        background: #0f172a;
+        padding: 7px 10px;
+        border-radius: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - MENU MOBILE PROFISSIONAL
+========================================== */
+
+@media (max-width: 768px) {
+
+    /* Menu organizado em três colunas */
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    /* Botões uniformes */
+    .menu-lateral nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        min-width: 0;
+        min-height: 58px;
+        padding: 10px 4px;
+        margin: 0;
+
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.4;
+    }
+
+    /* Botão selecionado */
+    .menu-lateral nav a.menu-ativo {
+        background: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    /* Ajustar espaçamento do menu */
+    .menu-lateral {
+        padding: 12px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - CRÉDITOS NO RODAPÉ
+========================================== */
+
+@media (max-width: 768px) {
+
+    .rodape-app,
+    .creditos-desenvolvedor,
+    footer {
+        order: 99;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        margin-top: 24px;
+        padding: 16px 12px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    body.dark-mode .rodape-app,
+    body.dark-mode .creditos-desenvolvedor,
+    body.dark-mode footer {
+        color: #94a3b8;
+    }
+}
+  
+
+/* ==========================================
+   TRAILER LOG - CARTÕES MOBILE
+   PASSO 6
+========================================== */
+
+@media (max-width: 768px) {
+
+    .painel-registro {
+        padding: 16px;
+        margin: 12px;
+        border-radius: 16px;
+    }
+
+    .cabecalho-pagina h1 {
+        font-size: 24px;
+    }
+
+    .linha-cadastros {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .cartao-truck,
+    .cartao-trailer {
+        width: 100%;
+        padding: 18px;
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+
+    .cartao-truck h2,
+    .cartao-trailer h2 {
+        font-size: 18px;
+        margin-bottom: 18px;
+    }
+
+    .campos-truck,
+    .campos-trailer {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .campos-truck .campo,
+    .campos-trailer .campo {
+        min-width: 0;
+    }
+
+    .campos-truck input,
+    .campos-truck select,
+    .campos-trailer input,
+    .campos-trailer select {
+        width: 100% !important;
+        min-height: 48px;
+        font-size: 16px;
+        border-radius: 9px;
+    }
+
+    .cartao-truck textarea,
+    .cartao-trailer textarea {
+        width: 100%;
+        min-height: 90px;
+    }
+
+    button[onclick="iniciarJornada()"],
+    #btnTrocarTrailer,
+    #btnFinalizarJornada {
+        width: 100%;
+        max-width: none;
+        min-height: 52px;
+        margin: 12px 0;
+        border-radius: 10px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - AJUSTES MOBILE
+   PASSO 7
+========================================== */
+
+@media (max-width: 768px) {
+
+    /* Interruptor sem acompanhar a rolagem */
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        width: max-content;
+        height: 42px;
+        margin: 18px auto;
+        padding: 6px 12px;
+        background: #0f172a;
+        border-radius: 24px;
+    }
+
+    /* Foto alinhada com o menu */
+    .topo-app {
+        width: 100%;
+        padding: 12px 12px 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .faixa-caminhao {
+        width: 100%;
+        border-radius: 12px 12px 0 0;
+        overflow: hidden;
+    }
+
+    /* Menu com bordas combinando */
+    .menu-lateral {
+        width: calc(100% - 24px);
+        margin: 0 12px;
+        padding: 12px;
+        border-radius: 0 0 12px 12px;
+        box-sizing: border-box;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - INTERRUPTOR NO RODAPÉ
+   PASSO 8
+========================================== */
+
+@media (max-width: 768px) {
+
+    .painel-registro,
+    .historico-painel,
+    .painel-configuracoes {
+        display: flex;
+        flex-direction: column;
+    }
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        order: 99;
+        align-self: center;
+        margin: 25px auto 10px;
+        width: max-content;
+        height: 42px;
+        padding: 6px 12px;
+        background: #0f172a;
+        border-radius: 24px;
+    }
+}
+
+
+/* ==========================================
+   TRAILER LOG - INTERRUPTOR PEQUENO
+   NO CANTO DIREITO
+========================================== */
+
+@media (max-width: 768px) {
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        align-self: flex-end;
+        order: 99;
+
+        width: max-content;
+        height: 30px;
+        padding: 0;
+        margin: 15px 5px 5px auto;
+
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
+    .interruptor-tema {
+        width: 36px;
+        height: 20px;
+    }
+
+    .bolinha-tema {
+        width: 14px;
+        height: 14px;
+    }
+
+    body.dark-mode .bolinha-tema {
+        transform: translateX(16px);
+    }
+}
