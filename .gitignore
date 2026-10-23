@@ -1,0 +1,10 @@
+
+# Documentos e arquivos de trabalho
+Documentos/
+
+# Arquivos locais e temporarios
+.env
+.env.*
+!.env.example
+node_modules/
+*.log

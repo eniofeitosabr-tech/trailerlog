@@ -1,0 +1,1127 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Trailer Log - Histórico</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* ESTILOS ESPECÍFICOS DO HISTÓRICO */
+
+        .historico-painel {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .historico-cabecalho {
+            margin-bottom: 24px;
+        }
+
+        .historico-cabecalho h1 {
+            color: #0b1f46;
+            font-size: 30px;
+            margin: 0 0 8px;
+        }
+
+        .historico-cabecalho p {
+            color: #64748b;
+            margin: 0;
+        }
+
+        .abas-historico {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .abas-historico button {
+            width: 100%;
+            margin: 0;
+            padding: 15px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+
+        .abas-historico button.aba-ativa {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .area-pesquisa {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .area-pesquisa label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .area-pesquisa input {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            height: 48px;
+        }
+
+        .resultado-vazio {
+            padding: 45px 20px;
+            text-align: center;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            color: #64748b;
+        }
+
+        .resultado-vazio .icone-vazio {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .resultado-vazio h3 {
+            margin: 0 0 8px;
+            color: #334155;
+        }
+
+        .resultado-vazio p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .resumo-utilizacoes {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .resumo-utilizacoes h2 {
+            color: #174ea6;
+            font-size: 18px;
+            margin: 0 0 10px;
+        }
+
+        .numero-utilizacoes {
+            color: #2563eb;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        .legenda-resumo {
+            color: #64748b;
+            font-size: 13px;
+            margin: 6px 0 0;
+        }
+
+        .registro-historico {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 14px;
+        }
+
+        .registro-historico.trailer {
+            border-left: 4px solid #16a34a;
+        }
+
+        .registro-historico.truck {
+            border-left: 4px solid #2563eb;
+        }
+
+        .registro-titulo {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #1e293b;
+        }
+
+        .registro-dados {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .registro-dado {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .registro-dado strong {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .registro-dado span {
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .registro-observacoes {
+            margin-top: 14px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        .registro-acoes {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .btn-excluir {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .btn-excluir:hover {
+            background: #fecaca;
+        }
+
+        .aviso-legado {
+            margin: 16px 0;
+            padding: 14px;
+            border-radius: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .historico-acoes {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .botao-voltar {
+            display: inline-block;
+            background: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .botao-voltar:hover {
+            background: #1d4ed8;
+        }
+
+        /* MODO ESCURO */
+
+        body.dark-mode .historico-painel,
+        body.dark-mode .registro-historico {
+            background: #0f172a;
+            border-color: #334155;
+        }
+
+        body.dark-mode .historico-cabecalho h1,
+        body.dark-mode .registro-titulo,
+        body.dark-mode .registro-dado span {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .historico-cabecalho p,
+        body.dark-mode .registro-dado strong {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .area-pesquisa,
+        body.dark-mode .resultado-vazio,
+        body.dark-mode .registro-observacoes {
+            background: #1e293b;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .resultado-vazio h3 {
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .resumo-utilizacoes {
+            background: #142b49;
+            border-color: #28558a;
+        }
+
+        body.dark-mode .resumo-utilizacoes h2,
+        body.dark-mode .numero-utilizacoes {
+            color: #93c5fd;
+        }
+
+        body.dark-mode .abas-historico button {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .abas-historico button.aba-ativa {
+            background: #2563eb;
+            color: white;
+        }
+
+        body.dark-mode .aviso-legado {
+            background: #422c12;
+            color: #fde68a;
+            border-color: #92400e;
+        }
+
+        body.dark-mode .btn-excluir {
+            background: #7f1d1d;
+            color: #ffffff;
+            border-color: #991b1b;
+        }
+
+        /* CELULAR E TABLET */
+
+        @media (max-width: 768px) {
+
+            .historico-painel {
+                padding: 16px;
+            }
+
+            .historico-cabecalho h1 {
+                font-size: 24px;
+            }
+
+            .registro-dados {
+                grid-template-columns: 1fr;
+            }
+
+            .abas-historico {
+                gap: 8px;
+            }
+
+            .abas-historico button {
+                font-size: 13px;
+                padding: 12px 8px;
+            }
+
+            .menu-lateral {
+                width: 100%;
+                min-width: 0;
+                min-height: auto;
+            }
+
+            .app-layout {
+                flex-direction: column;
+            }
+
+            .conteudo-principal {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <!-- MENU LATERAL -->
+
+    <aside class="menu-lateral">
+
+        <div class="logo-menu">
+            <h2>🚛 Trailer Log</h2>
+            <p>Controle de Frota</p>
+        </div>
+
+        <nav>
+            <a href="index.html">
+                📝 Registrar
+            </a>
+
+            <a href="historico.html" class="menu-ativo">
+                🕘 Histórico
+            </a>
+
+            <a href="historico.html">
+                📊 Relatórios
+            </a>
+
+            <a href="configuracoes.html">
+            ⚙️ Configurações
+            </a>
+
+            <a href="sobre.html">ℹ️ Sobre</a>
+        </nav>
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+
+    <main class="conteudo-principal">
+
+        <!-- CAMINHÃO VERMELHO -->
+
+        <section class="topo-app">
+            <div class="faixa-caminhao">
+                <div class="overlay-topo">
+                    <h1>Trailer Log</h1>
+                    <p>Controle de trucks e trailers</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAINEL BRANCO -->
+
+        <div class="historico-painel">
+
+            <header class="historico-cabecalho">
+                <h1>Histórico</h1>
+                <p>
+                    Consulte as utilizações dos seus caminhões
+                    e trailers.
+                </p>
+            </header>
+
+            <!-- BOTÃO DE TEMA -->
+
+            <button
+                type="button"
+                class="botao-tema"
+                onclick="alternarTema()"
+                aria-label="Alternar modo claro e escuro">
+
+                <span>🌙</span>
+
+                <span class="interruptor-tema">
+                    <span class="bolinha-tema"></span>
+                </span>
+
+            </button>
+
+            <!-- ABAS -->
+
+            <div class="abas-historico">
+
+                <button
+                    type="button"
+                    id="abaTrailers"
+                    class="aba-ativa"
+                    onclick="selecionarAba('trailer')">
+                    🚚 Trailers
+                </button>
+
+                <button
+                    type="button"
+                    id="abaTrucks"
+                    onclick="selecionarAba('truck')">
+                    🚛 Caminhões
+                </button>
+
+            </div>
+
+            <!-- PESQUISA -->
+
+            <div class="area-pesquisa">
+
+                <label
+                    for="campoPesquisa"
+                    id="labelPesquisa">
+                    Pesquisar Trailer
+                </label>
+
+                <input
+                    type="text"
+                    id="campoPesquisa"
+                    placeholder="Digite o número do Trailer"
+                    oninput="mostrarHistorico()"
+                    autocomplete="off">
+
+            </div>
+
+            <!-- RESULTADOS -->
+
+            <div id="historico"></div>
+
+            <!-- VOLTAR -->
+
+            <div class="historico-acoes">
+
+                <a href="index.html" class="botao-voltar">
+                    ← Voltar ao Registro
+                </a>
+
+            </div>
+
+        </div>
+
+        <footer class="rodape-creditos">
+            Trailer Log · Desenvolvido por <strong>Enio Feitosa</strong> · © 2026
+        </footer>
+    </main>
+
+</div>
+
+<script>
+
+// ==================================
+// CONFIGURAÇÕES
+// ==================================
+
+let tipoHistorico = "trailer";
+
+
+// ==================================
+// MODO CLARO E ESCURO
+// ==================================
+
+function alternarTema() {
+    document.body.classList.toggle("dark-mode");
+}
+
+
+// ==================================
+// LER REGISTROS SALVOS
+// ==================================
+
+function carregarLista(chave) {
+
+    try {
+        const dados = JSON.parse(
+            localStorage.getItem(chave) || "[]"
+        );
+
+        return Array.isArray(dados) ? dados : [];
+
+    } catch (erro) {
+        console.error("Erro ao ler registros:", chave, erro);
+        return [];
+    }
+}
+
+
+function carregarJornadaAtiva() {
+
+    try {
+        return JSON.parse(
+            localStorage.getItem("jornadaAtiva") || "null"
+        );
+
+    } catch (erro) {
+        console.error("Erro ao ler jornada ativa:", erro);
+        return null;
+    }
+}
+
+
+// ==================================
+// SEGURANÇA PARA MOSTRAR TEXTO
+// ==================================
+
+function escaparHTML(valor) {
+
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+
+// ==================================
+// FORMATAR DATA E HORA
+// ==================================
+
+function formatarData(valor) {
+
+    if (!valor) return "Não informada";
+
+    const data = new Date(valor);
+
+    if (isNaN(data.getTime())) {
+        return "Não informada";
+    }
+
+    return data.toLocaleDateString("pt-BR");
+}
+
+
+function formatarHora(valor) {
+
+    if (!valor) return "Não informada";
+
+    const data = new Date(valor);
+
+    if (isNaN(data.getTime())) {
+        return "Não informada";
+    }
+
+    return data.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+    });
+}
+
+
+// ==================================
+// ALTERNAR ENTRE AS ABAS
+// ==================================
+
+function selecionarAba(tipo) {
+
+    tipoHistorico = tipo;
+
+    const abaTrailers =
+        document.getElementById("abaTrailers");
+
+    const abaTrucks =
+        document.getElementById("abaTrucks");
+
+    const label =
+        document.getElementById("labelPesquisa");
+
+    const pesquisa =
+        document.getElementById("campoPesquisa");
+
+    abaTrailers.classList.toggle(
+        "aba-ativa",
+        tipo === "trailer"
+    );
+
+    abaTrucks.classList.toggle(
+        "aba-ativa",
+        tipo === "truck"
+    );
+
+    pesquisa.value = "";
+
+    if (tipo === "trailer") {
+
+        label.textContent = "Pesquisar Trailer";
+
+        pesquisa.placeholder =
+            "Digite o número do Trailer";
+
+    } else {
+
+        label.textContent = "Pesquisar Caminhão";
+
+        pesquisa.placeholder =
+            "Digite o número do Caminhão";
+    }
+
+    mostrarHistorico();
+}
+
+
+// ==================================
+// MENSAGEM QUANDO NÃO HÁ RESULTADO
+// ==================================
+
+function mostrarMensagem(titulo, descricao) {
+
+    const historico =
+        document.getElementById("historico");
+
+    historico.innerHTML = `
+        <div class="resultado-vazio">
+            <div class="icone-vazio">🔎</div>
+            <h3>${escaparHTML(titulo)}</h3>
+            <p>${escaparHTML(descricao)}</p>
+        </div>
+    `;
+}
+
+
+// ==================================
+// EXIBIR HISTÓRICO
+// ==================================
+
+function mostrarHistorico() {
+
+    const pesquisa = document
+        .getElementById("campoPesquisa")
+        .value.trim();
+
+    const historico =
+        document.getElementById("historico");
+
+    historico.innerHTML = "";
+
+    // COMEÇAR COM A TELA LIMPA
+
+    if (pesquisa === "") {
+
+        mostrarMensagem(
+            "Pesquise por um número",
+            tipoHistorico === "trailer"
+                ? "Digite o número de um Trailer para consultar seu histórico."
+                : "Digite o número de um Caminhão para consultar suas jornadas."
+        );
+
+        return;
+    }
+
+    if (tipoHistorico === "trailer") {
+
+        mostrarHistoricoTrailer(pesquisa);
+
+    } else {
+
+        mostrarHistoricoTruck(pesquisa);
+    }
+}
+
+
+// ==================================
+// HISTÓRICO DE TRAILERS
+// ==================================
+
+function mostrarHistoricoTrailer(numero) {
+
+    const historico =
+        document.getElementById("historico");
+
+    const trailers = carregarLista("trailersSalvos");
+
+    const registros = trailers
+        .map((item, index) => ({ item, index }))
+        .filter(registro =>
+            String(registro.item.trailer || "").trim() === numero
+        )
+        .reverse();
+
+    if (registros.length === 0) {
+
+        mostrarMensagem(
+            "Nenhum registro encontrado",
+            "Não encontramos utilizações para o Trailer " + numero + "."
+        );
+
+        return;
+    }
+
+    let html = `
+        <div class="resumo-utilizacoes">
+            <h2>🚚 Trailer ${escaparHTML(numero)}</h2>
+
+            <div class="numero-utilizacoes">
+                ${registros.length}
+            </div>
+
+            <p class="legenda-resumo">
+                ${registros.length === 1
+                    ? "Utilização registrada"
+                    : "Utilizações registradas"}
+            </p>
+        </div>
+    `;
+
+    registros.forEach(({item, index}) => {
+
+        html += `
+            <div class="registro-historico trailer">
+
+                <div class="registro-titulo">
+                    🚚 Trailer ${escaparHTML(item.trailer)}
+                </div>
+
+                <div class="registro-dados">
+
+                    <div class="registro-dado">
+                        <strong>Caminhão</strong>
+                        <span>${escaparHTML(item.truck || "Não informado")}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Condição da Carga</strong>
+                        <span>${escaparHTML(item.condition || "Não informada")}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Condição do Trailer</strong>
+                        <span>${escaparHTML(item.estado || "Não informada")}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Data</strong>
+                        <span>${formatarData(item.data)}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Hora</strong>
+                        <span>${formatarHora(item.data)}</span>
+                    </div>
+
+                </div>
+
+                <div class="registro-observacoes">
+                    <strong>Observações:</strong>
+                    ${escaparHTML(item.observacoes || "Nenhuma")}
+                </div>
+
+                <div class="registro-acoes">
+
+                    <button
+                        type="button"
+                        class="btn-excluir"
+                        onclick="excluirTrailer(${index})">
+
+                        🗑️ Excluir Registro
+
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+    });
+
+    historico.innerHTML = html;
+}
+
+
+// ==================================
+// HISTÓRICO DE CAMINHÕES
+// ==================================
+
+function mostrarHistoricoTruck(numero) {
+
+    const historico =
+        document.getElementById("historico");
+
+    const jornadasFinalizadas =
+        carregarLista("jornadasSalvas");
+
+    const jornadaAtiva =
+        carregarJornadaAtiva();
+
+    const trailers =
+        carregarLista("trailersSalvos");
+
+    const trucksCadastrados =
+        carregarLista("trucksCadastrados");
+
+    // JORNADAS REGISTRADAS PELO SISTEMA
+
+    const jornadas = jornadasFinalizadas.slice();
+
+    if (jornadaAtiva) {
+        jornadas.push(jornadaAtiva);
+    }
+
+    const jornadasDoTruck = jornadas
+        .filter(jornada =>
+            String(jornada.truck || "").trim() === numero
+        )
+        .filter((jornada, index, lista) =>
+            lista.findIndex(outro =>
+                outro.id === jornada.id
+            ) === index
+        )
+        .sort((a, b) =>
+            new Date(b.inicio) - new Date(a.inicio)
+        );
+
+    // CADASTRO INDEPENDENTE
+
+    const cadastro = trucksCadastrados.find(
+        item => String(item.numero || "").trim() === numero
+    );
+
+    // REGISTROS ANTIGOS SEM JORNADA IDENTIFICADA
+
+    const registrosAntigos = trailers.filter(
+        item =>
+            String(item.truck || "").trim() === numero &&
+            !item.jornadaId
+    );
+
+    if (
+        jornadasDoTruck.length === 0 &&
+        registrosAntigos.length === 0 &&
+        !cadastro
+    ) {
+
+        mostrarMensagem(
+            "Nenhum caminhão encontrado",
+            "Não encontramos registros para o Caminhão " + numero + "."
+        );
+
+        return;
+    }
+
+    let html = `
+        <div class="resumo-utilizacoes">
+
+            <h2>🚛 Caminhão ${escaparHTML(numero)}</h2>
+
+            <div class="numero-utilizacoes">
+                ${jornadasDoTruck.length}
+            </div>
+
+            <p class="legenda-resumo">
+                ${jornadasDoTruck.length === 1
+                    ? "Jornada identificada no sistema"
+                    : "Jornadas identificadas no sistema"}
+            </p>
+
+        </div>
+    `;
+
+    // MOSTRAR CADASTRO, SE EXISTIR
+
+    if (cadastro && jornadasDoTruck.length === 0) {
+
+        html += `
+            <div class="registro-historico truck">
+
+                <div class="registro-titulo">
+                    🚛 Cadastro do Caminhão
+                </div>
+
+                <div class="registro-dados">
+
+                    <div class="registro-dado">
+                        <strong>Número</strong>
+                        <span>${escaparHTML(cadastro.numero)}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Condição cadastrada</strong>
+                        <span>${escaparHTML(cadastro.condicao || "Não informada")}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Data do Cadastro</strong>
+                        <span>${formatarData(cadastro.dataCadastro)}</span>
+                    </div>
+
+                </div>
+
+                <div class="registro-observacoes">
+                    <strong>Observações:</strong>
+                    ${escaparHTML(cadastro.observacoes || "Nenhuma")}
+                </div>
+
+            </div>
+        `;
+    }
+
+    // EXIBIR CADA JORNADA APENAS UMA VEZ
+
+    jornadasDoTruck.forEach(jornada => {
+
+        const trailersDaJornada = trailers.filter(
+            item => item.jornadaId === jornada.id
+        );
+
+        const listaTrailers = trailersDaJornada.length
+            ? trailersDaJornada
+                .map(item => escaparHTML(item.trailer))
+                .join(", ")
+            : "Nenhum Trailer registrado";
+
+        const situacao =
+            jornada.status === "Finalizada"
+                ? "Finalizada"
+                : "Em andamento";
+
+        html += `
+            <div class="registro-historico truck">
+
+                <div class="registro-titulo">
+                    🚛 Jornada — ${escaparHTML(situacao)}
+                </div>
+
+                <div class="registro-dados">
+
+                    <div class="registro-dado">
+                        <strong>Número do Caminhão</strong>
+                        <span>${escaparHTML(jornada.truck)}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Condição do Caminhão</strong>
+                        <span>${escaparHTML(jornada.condicaoTruck || "Não informada")}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Data de Início</strong>
+                        <span>${formatarData(jornada.inicio)}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Hora de Início</strong>
+                        <span>${formatarHora(jornada.inicio)}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Data de Término</strong>
+                        <span>${jornada.fim
+                            ? formatarData(jornada.fim)
+                            : "Em andamento"}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Hora de Término</strong>
+                        <span>${jornada.fim
+                            ? formatarHora(jornada.fim)
+                            : "Em andamento"}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Trailers Utilizados</strong>
+                        <span>${listaTrailers}</span>
+                    </div>
+
+                    <div class="registro-dado">
+                        <strong>Utilizações de Trailers</strong>
+                        <span>${trailersDaJornada.length}</span>
+                    </div>
+
+                </div>
+
+                <div class="registro-observacoes">
+                    <strong>Observações do Caminhão:</strong>
+                    ${escaparHTML(jornada.observacoesTruck || "Nenhuma")}
+                </div>
+
+            </div>
+        `;
+    });
+
+    // REGISTROS DO SISTEMA ANTIGO
+
+    if (registrosAntigos.length > 0) {
+
+        html += `
+            <div class="aviso-legado">
+                <strong>Registros anteriores:</strong>
+                Encontramos ${registrosAntigos.length}
+                registro(s) do sistema antigo sem identificação
+                de jornada. Eles aparecem abaixo, mas não foram
+                somados à contagem de jornadas porque podem
+                representar várias trocas no mesmo dia.
+            </div>
+        `;
+
+        registrosAntigos.slice().reverse().forEach(item => {
+
+            html += `
+                <div class="registro-historico truck">
+
+                    <div class="registro-titulo">
+                        🚛 Registro anterior
+                    </div>
+
+                    <div class="registro-dados">
+
+                        <div class="registro-dado">
+                            <strong>Caminhão</strong>
+                            <span>${escaparHTML(item.truck)}</span>
+                        </div>
+
+                        <div class="registro-dado">
+                            <strong>Trailer Vinculado</strong>
+                            <span>${escaparHTML(item.trailer || "Não informado")}</span>
+                        </div>
+
+                        <div class="registro-dado">
+                            <strong>Condição do Caminhão</strong>
+                            <span>${escaparHTML(item.estadoTruck || "Não informada")}</span>
+                        </div>
+
+                        <div class="registro-dado">
+                            <strong>Data</strong>
+                            <span>${formatarData(item.data)}</span>
+                        </div>
+
+                        <div class="registro-dado">
+                            <strong>Hora</strong>
+                            <span>${formatarHora(item.data)}</span>
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+        });
+    }
+
+    historico.innerHTML = html;
+}
+
+
+// ==================================
+// EXCLUIR REGISTRO DE TRAILER
+// ==================================
+
+function excluirTrailer(index) {
+
+    const trailers =
+        carregarLista("trailersSalvos");
+
+    const registro = trailers[index];
+
+    if (!registro) {
+        alert("Registro não encontrado.");
+        return;
+    }
+
+    const confirmar = confirm(
+        "Deseja realmente excluir o registro do Trailer " +
+        registro.trailer + "?\n\n" +
+        "Essa ação não poderá ser desfeita."
+    );
+
+    if (!confirmar) return;
+
+    // REMOVE SOMENTE O REGISTRO SELECIONADO
+    // NÃO EXCLUI A JORNADA ASSOCIADA
+
+    trailers.splice(index, 1);
+
+    localStorage.setItem(
+        "trailersSalvos",
+        JSON.stringify(trailers)
+    );
+
+    mostrarHistorico();
+}
+
+
+// ==================================
+// INICIALIZAR
+// ==================================
+
+document.addEventListener("DOMContentLoaded", function() {
+    mostrarHistorico();
+});
+
+</script>
+
+</body>
+</html>

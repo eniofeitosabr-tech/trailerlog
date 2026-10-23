@@ -1,0 +1,1370 @@
+/* TRAILER LOG - ESTILO PRINCIPAL */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fc;
+    color: #1e293b;
+    margin: 0;
+    padding: 0px;
+}
+
+/* Títulos */
+
+h1 {
+    color: #1565c0;
+    font-size: 28px;
+}
+
+h2 {
+    color: #1e293b;
+}
+
+/* Campos de cadastro */
+
+input, select, textarea {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 16px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* Botões */
+
+button {
+    background-color: #1565c0;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #0d47a1;
+}
+
+/* Histórico */
+
+#historico {
+    margin-top: 20px;
+}
+
+#historico p {
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    line-height: 1.8;
+}
+/* ==================================
+   TRAILER LOG - MODO ESCURO
+================================== */
+
+body.dark-mode {
+    background-color: #0b1120;
+    color: #e2e8f0;
+}
+
+/* Títulos */
+
+body.dark-mode h1 {
+    color: #3b82f6;
+}
+
+body.dark-mode h2,
+body.dark-mode h3 {
+    color: #f1f5f9;
+}
+
+/* Campos */
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #1e293b;
+    color: #ffffff;
+    border: 1px solid #334155;
+}
+
+/* Botões */
+
+body.dark-mode button {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+body.dark-mode button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Histórico */
+
+body.dark-mode #historico p {
+    background-color: #1e293b;
+    color: #f1f5f9;
+}
+
+/* Linhas divisórias */
+
+body.dark-mode hr {
+    border: none;
+    border-top: 1px solid #334155;
+}
+
+/* BOTÃO DO MODO CLARO E ESCURO */
+
+button.botao-tema,
+body.dark-mode button.botao-tema {
+    position: fixed;
+    bottom: 20px;
+    left: 15px;
+    top: auto;
+    right: auto;
+
+    width: 170px;
+    height: 42px;
+    padding: 0 12px;
+    margin: 0;
+    white-space: nowrap;
+
+    border: none;
+    border-radius: 10px;
+    background-color: #1e293b;
+    color: white;
+
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+button.botao-tema:hover,
+body.dark-mode button.botao-tema:hover {
+    background-color: #2563eb;
+}
+#truckCondition,
+#condition,
+#trailerCondition {
+    width: 150px;
+    height: 38px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* LAYOUT PRINCIPAL DO TRAILER LOG */
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* MENU LATERAL DO TRAILER LOG */
+
+.menu-lateral {
+    width: 240px;
+    min-width: 240px;
+    min-height: 100vh;
+    background: #0f172a;
+    color: white;
+    padding: 20px 15px;
+    box-sizing: border-box;
+}
+
+.menu-lateral h2 {
+    color: white;
+    margin-bottom: 30px;
+}
+
+.menu-lateral nav a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.menu-lateral nav a:hover {
+    background-color: #1565c0;
+}
+/* INTERRUPTOR DESLIZANTE DO MODO ESCURO */
+
+button.botao-tema {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 210px;
+}
+
+.interruptor-tema {
+    width: 42px;
+    height: 24px;
+    background-color: #64748b;
+    border-radius: 20px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.3s;
+}
+
+.bolinha-tema {
+    width: 18px;
+    height: 18px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+}
+
+body.dark-mode .interruptor-tema {
+    background-color: #3b82f6;
+}
+
+body.dark-mode .bolinha-tema {
+    transform: translateX(18px);
+}
+/* REMOVER O FUNDO DO BOTÃO DE TEMA */
+
+button.botao-tema,
+body.dark-mode button.botao-tema,
+button.botao-tema:hover,
+body.dark-mode button.botao-tema:hover {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    width: 210px;
+    padding: 0;
+    justify-content: space-between;
+    transform: none;
+}
+
+/* MANTER O INTERRUPTOR CLICÁVEL */
+
+button.botao-tema {
+    cursor: pointer;
+}
+
+/* LUA E INTERRUPTOR LADO A LADO */
+
+button.botao-tema,
+body.dark-mode button.botao-tema {
+    width: auto;
+    gap: 6px;
+    justify-content: flex-start;
+    padding: 0;
+}
+
+/* CORRIGIR MOVIMENTO AO PASSAR O MOUSE */
+
+button.botao-tema,
+button.botao-tema:hover,
+body.dark-mode button.botao-tema,
+body.dark-mode button.botao-tema:hover {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: max-content;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transform: none;
+}
+
+/* CARTÃO DE REGISTRO DO TRUCK */
+
+.cartao-truck {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    max-width: 650px;
+}
+/* CARTÃO DO TRUCK NO MODO ESCURO */
+
+body.dark-mode .cartao-truck {
+    background-color: #0f172a;
+    color: #ffffff;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+/* CARTÃO DO TRAILER - MODO CLARO */
+
+.cartao-trailer {
+    background-color: #ffffff;
+    color: #1e293b;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    max-width: 650px;
+}
+
+/* CARTÃO DO TRAILER - MODO ESCURO */
+
+body.dark-mode .cartao-trailer {
+    background-color: #0f172a;
+    color: #ffffff;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+/* CABEÇALHO - NOVO REGISTRO */
+
+.cabecalho-pagina {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.cabecalho-pagina h1 {
+    color: #0b1f46;
+    font-size: 30px;
+    margin: 0 0 8px;
+}
+
+.cabecalho-pagina p {
+    color: #475569;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* MODO ESCURO */
+
+body.dark-mode .cabecalho-pagina {
+    background-color: #0f172a;
+}
+
+body.dark-mode .cabecalho-pagina h1 {
+    color: #ffffff;
+}
+
+body.dark-mode .cabecalho-pagina p {
+    color: #cbd5e1;
+}
+/* FAIXA SUPERIOR - TRAILER LOG */
+
+.topo-app {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.faixa-caminhao {
+    width: 100%;
+    height: 220px;
+    border-radius: 15px;
+    overflow: hidden;
+    background-color: #12284b;
+    position: relative;
+}
+
+.overlay-topo {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 30px;
+    background: linear-gradient(
+        90deg,
+        rgba(8, 23, 48, 0.85),
+        rgba(8, 23, 48, 0.1)
+    );
+}
+
+.overlay-topo h1 {
+    color: white;
+    font-size: 32px;
+    margin: 0 0 8px;
+}
+
+.overlay-topo p {
+    color: #e2e8f0;
+    font-size: 16px;
+    margin: 0;
+}
+/* CORRIGIR LARGURA DO CONTEÚDO PRINCIPAL */
+
+.conteudo-principal {
+    flex: 1;
+    min-width: 0;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.faixa-caminhao {
+   width: 100%;
+    height: 220px;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    background-color: #12284b;
+    background-image: url("truck-topo.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-sizing: border-box;
+}
+/* LOGOTIPO DO MENU */
+
+.logo-menu {
+    padding: 10px 12px 25px;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 25px;
+}
+
+.logo-menu h2 {
+    color: #ffffff;
+    font-size: 23px;
+    margin: 0 0 8px;
+}
+
+.logo-menu p {
+    color: #94a3b8;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* LINKS DO MENU */
+
+.menu-lateral nav a {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 15px;
+    transition: background-color 0.2s;
+}
+
+.menu-lateral nav a:hover {
+    background-color: #1e3a5f;
+    color: white;
+}
+
+/* BOTÃO REGISTRAR ATIVO */
+
+.menu-lateral nav a.menu-ativo {
+    background-color: #2563eb;
+    color: white;
+    font-weight: bold;
+}
+
+/* CARTÕES DE TRUCK E TRAILER */
+
+.cartao-truck,
+.cartao-trailer {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    margin-bottom: 0;
+}
+
+/* CONTAINER DOS CARTÕES */
+
+.linha-cadastros {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* ADAPTAÇÃO PARA CELULAR */
+
+@media (max-width: 768px) {
+    .linha-cadastros {
+        flex-direction: column;
+    }
+}
+
+/* ALINHAMENTO DOS CARTÕES */
+
+.linha-cadastros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.cartao-truck,
+.cartao-trailer {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+/* TÍTULOS DOS CARTÕES */
+
+.cartao-truck h2,
+.cartao-trailer h2 {
+    font-size: 20px;
+    margin: 0 0 24px;
+    min-height: 32px;
+}
+
+/* CAMPOS DE CADASTRO */
+
+.cartao-truck label,
+.cartao-trailer label {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cartao-truck input,
+.cartao-trailer input,
+.cartao-truck select,
+.cartao-trailer select,
+.cartao-truck textarea,
+.cartao-trailer textarea {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    height: auto;
+    min-height: 44px;
+    margin: 8px 0 18px;
+    box-sizing: border-box;
+}
+
+.cartao-truck textarea,
+.cartao-trailer textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 900px) {
+    .linha-cadastros {
+        grid-template-columns: 1fr;
+    }
+}
+/* ==================================
+   TRAILER LOG - CORES DOS CARTÕES
+================================== */
+
+/* TRUCK - AZUL CLARO */
+
+.cartao-truck {
+    background-color: #eaf3ff;
+    border: 1px solid #c7defb;
+    box-shadow: 0 3px 12px rgba(30, 64, 175, 0.06);
+}
+
+.cartao-truck h2 {
+    color: #174ea6;
+}
+
+/* TRAILER - VERDE CLARO */
+
+.cartao-trailer {
+    background-color: #eaf8f0;
+    border: 1px solid #bfe7cf;
+    box-shadow: 0 3px 12px rgba(22, 101, 52, 0.06);
+}
+
+.cartao-trailer h2 {
+    color: #167347;
+}
+
+/* CAMPOS BRANCOS */
+
+.cartao-truck input,
+.cartao-truck select,
+.cartao-truck textarea,
+.cartao-trailer input,
+.cartao-trailer select,
+.cartao-trailer textarea {
+    background-color: #ffffff;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+}
+
+/* MODO ESCURO - TRUCK */
+
+body.dark-mode .cartao-truck {
+    background-color: #142b49;
+    border-color: #28558a;
+    color: #f1f5f9;
+}
+
+body.dark-mode .cartao-truck h2 {
+    color: #93c5fd;
+}
+
+/* MODO ESCURO - TRAILER */
+
+body.dark-mode .cartao-trailer {
+    background-color: #14372f;
+    border-color: #276749;
+    color: #f1f5f9;
+}
+
+body.dark-mode .cartao-trailer h2 {
+    color: #86efac;
+}
+
+/* CAMPOS NO MODO ESCURO */
+
+body.dark-mode .cartao-truck input,
+body.dark-mode .cartao-truck select,
+body.dark-mode .cartao-truck textarea,
+body.dark-mode .cartao-trailer input,
+body.dark-mode .cartao-trailer select,
+body.dark-mode .cartao-trailer textarea {
+    background-color: #1e293b;
+    color: #ffffff;
+    border-color: #475569;
+}
+/* ==================================
+   BOTÃO SALVAR REGISTRO
+================================== */
+
+.conteudo-principal > button:not(.botao-tema) {
+    display: block;
+    width: 260px;
+    max-width: 100%;
+    margin: 25px auto;
+    padding: 15px 25px;
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transition: background-color 0.2s;
+}
+
+.conteudo-principal > button:not(.botao-tema):hover {
+    background-color: #1d4ed8;
+}
+
+/* BOTÃO NO MODO ESCURO */
+
+body.dark-mode .conteudo-principal > button:not(.botao-tema) {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+/* ==================================
+   LAYOUT ORIGINAL - TRUCK E TRAILER
+================================== */
+
+.linha-cadastros {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* CARTÕES OCUPANDO TODA A LARGURA */
+
+.cartao-truck,
+.cartao-trailer {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/* ESPAÇAMENTO DOS TÍTULOS */
+
+.cartao-truck h2,
+.cartao-trailer h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* CAMPOS DO TRAILER LADO A LADO */
+
+.campos-trailer {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+.campos-trailer .campo {
+    min-width: 0;
+}
+
+.campos-trailer label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.campos-trailer input,
+.campos-trailer select {
+    width: 100% !important;
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .campos-trailer {
+        grid-template-columns: 1fr;
+    }
+}
+/* ALINHAMENTO DEFINITIVO DOS CAMPOS DE CADASTRO */
+.campos-truck,
+.campos-trailer {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+    width: 100%;
+}
+.campos-truck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.campos-trailer { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.campos-truck .campo,
+.campos-trailer .campo { min-width: 0; }
+.campos-truck .campo label,
+.campos-trailer .campo label {
+    display: block;
+    width: 100%;
+    margin-bottom: 7px;
+    font-weight: 600;
+}
+.campos-truck .campo input,
+.campos-truck .campo select,
+.campos-trailer .campo input,
+.campos-trailer .campo select {
+    display: block;
+    width: 100% !important;
+    height: 44px;
+    margin: 0;
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    .campos-truck, .campos-trailer {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================
+   PAINEL PRINCIPAL - NOVO REGISTRO
+================================== */
+
+.painel-registro {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    margin-bottom: 25px;
+}
+
+/* CABEÇALHO DENTRO DO PAINEL */
+
+.painel-registro .cabecalho-pagina {
+    padding: 0;
+    margin-bottom: 24px;
+    background: transparent;
+}
+
+/* MODO ESCURO */
+
+body.dark-mode .painel-registro {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+}
+
+body.dark-mode .painel-registro .cabecalho-pagina {
+    background: transparent;
+}
+
+/* AJUSTE PARA CELULAR */
+
+@media (max-width: 768px) {
+    .painel-registro {
+        padding: 16px;
+    }
+}
+/* ==================================
+   TRAILER LOG - JANELA DE SUCESSO
+================================== */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal-conteudo {
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 350px;
+    padding: 35px 25px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-icone {
+    width: 65px;
+    height: 65px;
+    background-color: #dcfce7;
+    color: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 0 auto 20px;
+}
+
+.modal-conteudo h2 {
+    color: #1e293b;
+    font-size: 20px;
+    margin: 0 0 12px;
+}
+
+.modal-conteudo p {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.modal-conteudo button {
+    background-color: #2563eb;
+    color: white;
+    padding: 12px 35px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* MODO ESCURO */
+
+body.dark-mode .modal-conteudo {
+    background-color: #1e293b;
+}
+
+body.dark-mode .modal-conteudo h2 {
+    color: #ffffff;
+}
+
+body.dark-mode .modal-conteudo p {
+    color: #cbd5e1;
+}
+/* ==================================
+   BOTÕES DA JORNADA - PADRONIZADOS
+================================== */
+
+/* MESMO TAMANHO PARA TODOS */
+
+button[onclick="iniciarJornada()"],
+#btnTrocarTrailer,
+#btnFinalizarJornada {
+    width: 100%;
+    max-width: 360px;
+    min-height: 50px;
+    padding: 14px 20px;
+    margin: 12px auto;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+/* INICIAR JORNADA - AZUL */
+
+button[onclick="iniciarJornada()"] {
+    background-color: #2563eb;
+    color: white;
+}
+
+/* ADICIONAR / TROCAR TRAILER - AZUL */
+
+#btnTrocarTrailer,
+body.dark-mode #btnTrocarTrailer {
+    background-color: #2563eb;
+    color: white;
+}
+
+/* FINALIZAR JORNADA - VERMELHO */
+
+#btnFinalizarJornada,
+body.dark-mode #btnFinalizarJornada {
+    background-color: #dc2626;
+    color: white;
+}
+
+/* EFEITO AO PASSAR O MOUSE */
+
+#btnFinalizarJornada:hover,
+body.dark-mode #btnFinalizarJornada:hover {
+    background-color: #b91c1c;
+}
+
+#btnTrocarTrailer:hover,
+body.dark-mode #btnTrocarTrailer:hover {
+    background-color: #1d4ed8;
+}
+
+/* ETAPA 6 — CRÉDITOS E PÁGINA SOBRE */
+.rodape-creditos {
+    padding: 22px 12px 8px;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+body.dark-mode .rodape-creditos { color: #94a3b8; }
+.sobre-painel {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    max-width: 900px;
+    margin: 0 auto;
+}
+.sobre-painel h1 { color: #0b1f46; margin: 0 0 12px; }
+.sobre-painel h2 { color: #174ea6; font-size: 19px; margin-top: 26px; }
+.sobre-painel p { color: #475569; line-height: 1.75; }
+.sobre-painel .sobre-desenvolvedor {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+.sobre-painel .sobre-desenvolvedor p { margin: 7px 0; }
+body.dark-mode .sobre-painel { background: #0f172a; border: 1px solid #334155; }
+body.dark-mode .sobre-painel h1 { color: #f1f5f9; }
+body.dark-mode .sobre-painel h2 { color: #93c5fd; }
+body.dark-mode .sobre-painel p { color: #cbd5e1; }
+body.dark-mode .sobre-painel .sobre-desenvolvedor { background: #142b49; border-color: #28558a; }
+@media (max-width: 768px) {
+    .sobre-painel { padding: 20px; }
+    .sobre-painel h1 { font-size: 25px; }
+}
+
+
+/* ==================================
+   TRAILER LOG - LAYOUT MOBILE
+   PASSO 1 - MENU RESPONSIVO
+================================== */
+
+@media (max-width: 768px) {
+
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .menu-lateral {
+        width: 100%;
+        min-width: 0;
+        min-height: auto;
+        padding: 12px;
+    }
+
+    .logo-menu {
+        text-align: center;
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .menu-lateral nav a {
+        margin: 0;
+        padding: 12px 8px;
+        justify-content: center;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .conteudo-principal {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - MOBILE
+   IMAGEM NO TOPO E MENU ALINHADO
+========================================== */
+
+@media (max-width: 768px) {
+
+    .app-layout {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .conteudo-principal {
+        display: contents;
+    }
+
+    .topo-app {
+        order: 1;
+        margin: 0;
+        padding: 12px 12px 0;
+        box-sizing: border-box;
+    }
+
+    .faixa-caminhao {
+        height: 170px;
+        background-position: center;
+        border-radius: 12px;
+    }
+
+    .overlay-topo {
+        padding: 18px;
+    }
+
+    .overlay-topo h1 {
+        font-size: 25px;
+    }
+
+    .menu-lateral {
+        order: 2;
+        width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+
+    .logo-menu {
+        display: none;
+    }
+
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .menu-lateral nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 48px;
+        padding: 8px 4px;
+        margin: 0;
+        font-size: 12px;
+        box-sizing: border-box;
+    }
+
+    .painel-registro,
+    .historico-painel,
+    .painel-configuracoes {
+        order: 3;
+        margin: 12px;
+        min-width: 0;
+    }
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: fixed;
+        top: auto;
+        left: auto;
+        right: 16px;
+        bottom: 16px;
+        z-index: 1000;
+        background: #0f172a;
+        padding: 7px 10px;
+        border-radius: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - MENU MOBILE PROFISSIONAL
+========================================== */
+
+@media (max-width: 768px) {
+
+    /* Menu organizado em três colunas */
+    .menu-lateral nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    /* Botões uniformes */
+    .menu-lateral nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        min-width: 0;
+        min-height: 58px;
+        padding: 10px 4px;
+        margin: 0;
+
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.4;
+    }
+
+    /* Botão selecionado */
+    .menu-lateral nav a.menu-ativo {
+        background: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    /* Ajustar espaçamento do menu */
+    .menu-lateral {
+        padding: 12px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - CRÉDITOS NO RODAPÉ
+========================================== */
+
+@media (max-width: 768px) {
+
+    .rodape-app,
+    .creditos-desenvolvedor,
+    footer {
+        order: 99;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        margin-top: 24px;
+        padding: 16px 12px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    body.dark-mode .rodape-app,
+    body.dark-mode .creditos-desenvolvedor,
+    body.dark-mode footer {
+        color: #94a3b8;
+    }
+}
+  
+
+/* ==========================================
+   TRAILER LOG - CARTÕES MOBILE
+   PASSO 6
+========================================== */
+
+@media (max-width: 768px) {
+
+    .painel-registro {
+        padding: 16px;
+        margin: 12px;
+        border-radius: 16px;
+    }
+
+    .cabecalho-pagina h1 {
+        font-size: 24px;
+    }
+
+    .linha-cadastros {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .cartao-truck,
+    .cartao-trailer {
+        width: 100%;
+        padding: 18px;
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+
+    .cartao-truck h2,
+    .cartao-trailer h2 {
+        font-size: 18px;
+        margin-bottom: 18px;
+    }
+
+    .campos-truck,
+    .campos-trailer {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .campos-truck .campo,
+    .campos-trailer .campo {
+        min-width: 0;
+    }
+
+    .campos-truck input,
+    .campos-truck select,
+    .campos-trailer input,
+    .campos-trailer select {
+        width: 100% !important;
+        min-height: 48px;
+        font-size: 16px;
+        border-radius: 9px;
+    }
+
+    .cartao-truck textarea,
+    .cartao-trailer textarea {
+        width: 100%;
+        min-height: 90px;
+    }
+
+    button[onclick="iniciarJornada()"],
+    #btnTrocarTrailer,
+    #btnFinalizarJornada {
+        width: 100%;
+        max-width: none;
+        min-height: 52px;
+        margin: 12px 0;
+        border-radius: 10px;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - AJUSTES MOBILE
+   PASSO 7
+========================================== */
+
+@media (max-width: 768px) {
+
+    /* Interruptor sem acompanhar a rolagem */
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        width: max-content;
+        height: 42px;
+        margin: 18px auto;
+        padding: 6px 12px;
+        background: #0f172a;
+        border-radius: 24px;
+    }
+
+    /* Foto alinhada com o menu */
+    .topo-app {
+        width: 100%;
+        padding: 12px 12px 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .faixa-caminhao {
+        width: 100%;
+        border-radius: 12px 12px 0 0;
+        overflow: hidden;
+    }
+
+    /* Menu com bordas combinando */
+    .menu-lateral {
+        width: calc(100% - 24px);
+        margin: 0 12px;
+        padding: 12px;
+        border-radius: 0 0 12px 12px;
+        box-sizing: border-box;
+    }
+}
+
+/* ==========================================
+   TRAILER LOG - INTERRUPTOR NO RODAPÉ
+   PASSO 8
+========================================== */
+
+@media (max-width: 768px) {
+
+    .painel-registro,
+    .historico-painel,
+    .painel-configuracoes {
+        display: flex;
+        flex-direction: column;
+    }
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        order: 99;
+        align-self: center;
+        margin: 25px auto 10px;
+        width: max-content;
+        height: 42px;
+        padding: 6px 12px;
+        background: #0f172a;
+        border-radius: 24px;
+    }
+}
+
+
+/* ==========================================
+   TRAILER LOG - INTERRUPTOR PEQUENO
+   NO CANTO DIREITO
+========================================== */
+
+@media (max-width: 768px) {
+
+    button.botao-tema,
+    body.dark-mode button.botao-tema {
+        position: static;
+        align-self: flex-end;
+        order: 99;
+
+        width: max-content;
+        height: 30px;
+        padding: 0;
+        margin: 15px 5px 5px auto;
+
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
+    .interruptor-tema {
+        width: 36px;
+        height: 20px;
+    }
+
+    .bolinha-tema {
+        width: 14px;
+        height: 14px;
+    }
+
+    body.dark-mode .bolinha-tema {
+        transform: translateX(16px);
+    }
+}
+
+.app-version {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-top: 5px;
+}
