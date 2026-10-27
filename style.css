@@ -1379,6 +1379,18 @@ body.dark-mode .sobre-painel .sobre-desenvolvedor { background: #142b49; border-
     margin-top: 5px;
 }
 
+.aviso-atualizacao {
+    margin: 16px 0;
+    padding: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    overflow-wrap: anywhere;
+}
+.aviso-atualizacao[hidden] { display: none; }
+.aviso-atualizacao button { max-width: 100%; white-space: normal; }
+body.dark-mode .aviso-atualizacao { background: #142b49; border-color: #28558a; }
+
 /* Backup: mantém os cartões, cores e botões das configurações. */
 .cartao-backup {
     background: #eff6ff;

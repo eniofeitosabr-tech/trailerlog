@@ -469,6 +469,8 @@
 
 </div>
 
+<script src="sha256.js"></script>
+<script src="storage.js"></script>
 <script>
 
 // ==================================
@@ -491,35 +493,9 @@ function alternarTema() {
 // LER REGISTROS SALVOS
 // ==================================
 
-function carregarLista(chave) {
-
-    try {
-        const dados = JSON.parse(
-            localStorage.getItem(chave) || "[]"
-        );
-
-        return Array.isArray(dados) ? dados : [];
-
-    } catch (erro) {
-        console.error("Erro ao ler registros:", chave, erro);
-        return [];
-    }
-}
-
-
-function carregarJornadaAtiva() {
-
-    try {
-        return JSON.parse(
-            localStorage.getItem("jornadaAtiva") || "null"
-        );
-
-    } catch (erro) {
-        console.error("Erro ao ler jornada ativa:", erro);
-        return null;
-    }
-}
-
+let snapshotHistorico = null;
+function carregarLista(chave) { return snapshotHistorico.data[chave]; }
+function carregarJornadaAtiva() { return snapshotHistorico.data.jornadaAtiva; }
 
 // ==================================
 // SEGURANÇA PARA MOSTRAR TEXTO
@@ -646,7 +622,9 @@ function mostrarMensagem(titulo, descricao) {
 // EXIBIR HISTÓRICO
 // ==================================
 
-function mostrarHistorico() {
+function mostrarHistorico(snapshot) {
+    try { snapshotHistorico = snapshot && snapshot.data ? snapshot : TrailerStorage.read(); }
+    catch (error) { mostrarMensagem("Não foi possível carregar o histórico", error.message); return; }
 
     const pesquisa = document
         .getElementById("campoPesquisa")
@@ -1066,46 +1044,41 @@ function mostrarHistoricoTruck(numero) {
 // EXCLUIR REGISTRO DE TRAILER
 // ==================================
 
-function excluirTrailer(index) {
-
-    const trailers =
-        carregarLista("trailersSalvos");
-
-    const registro = trailers[index];
-
-    if (!registro) {
-        alert("Registro não encontrado.");
-        return;
-    }
-
-    const confirmar = confirm(
-        "Deseja realmente excluir o registro do Trailer " +
-        registro.trailer + "?\n\n" +
-        "Essa ação não poderá ser desfeita."
-    );
-
-    if (!confirmar) return;
-
-    // REMOVE SOMENTE O REGISTRO SELECIONADO
-    // NÃO EXCLUI A JORNADA ASSOCIADA
-
-    trailers.splice(index, 1);
-
-    localStorage.setItem(
-        "trailersSalvos",
-        JSON.stringify(trailers)
-    );
-
-    mostrarHistorico();
+async function excluirTrailer(index) {
+    const registro = snapshotHistorico && snapshotHistorico.data.trailersSalvos[index];
+    if (!registro) return alert("Registro não encontrado. Atualize a pesquisa.");
+    if (!confirm("Deseja realmente excluir o registro do Trailer " + registro.trailer + "?\n\nEssa ação não poderá ser desfeita.")) return;
+    try {
+        await TrailerStorage.change(data => {
+            const position = data.trailersSalvos.findIndex(item => item.registroId === registro.registroId);
+            if (position < 0 || JSON.stringify(data.trailersSalvos[position]) !== JSON.stringify(registro)) {
+                throw Error("O registro foi excluído ou alterado em outra aba. Atualize a pesquisa.");
+            }
+            data.trailersSalvos.splice(position, 1);
+            // Mantém o último trailer da jornada coerente com as utilizações restantes.
+            for (const jornada of [...data.jornadasSalvas, ...(data.jornadaAtiva ? [data.jornadaAtiva] : [])]) {
+                if (registro.jornadaId !== jornada.id) continue;
+                const restantes = data.trailersSalvos.filter(item => item.jornadaId === jornada.id);
+                const ultimo = restantes[restantes.length - 1];
+                jornada.trailer = ultimo ? ultimo.trailer : "";
+                jornada.condicaoTrailer = ultimo ? ultimo.estado || "" : "";
+                jornada.condicaoCarga = ultimo ? ultimo.condition || "" : "";
+                jornada.observacoesTrailer = ultimo ? ultimo.observacoes || "" : "";
+            }
+        });
+    } catch (error) { alert(error.message); }
 }
-
 
 // ==================================
 // INICIALIZAR
 // ==================================
 
 document.addEventListener("DOMContentLoaded", function() {
-    mostrarHistorico();
+    TrailerStorage.subscribe((current, external, dataChanged) => {
+        if (dataChanged) mostrarHistorico(current);
+    }, error => {
+        mostrarMensagem("Não foi possível carregar o histórico", error.message);
+    });
 });
 
 </script>

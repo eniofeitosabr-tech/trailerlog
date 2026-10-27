@@ -308,7 +308,23 @@
                         <button type="button" onclick="document.getElementById('arquivoBackup').click()">Restaurar Backup</button>
                     </div>
                     <input type="file" id="arquivoBackup" accept=".json,application/json" hidden onchange="restaurarBackup(this)">
+                    <div id="avisoAtualizacaoBackup" class="aviso-atualizacao" role="status" aria-live="polite" hidden>
+                        <p id="textoAtualizacaoBackup">Outra aba atualizou os registros. O arquivo selecionado foi preservado. Confira a atualização antes de restaurar.</p>
+                        <button type="button" onclick="aceitarAtualizacaoBackup()">Atualizar</button>
+                        <button type="button" id="btnContinuarBackup" onclick="continuarEditandoBackup()">Continuar editando</button>
+                    </div>
                     <p id="statusBackup" role="status" aria-live="polite"></p>
+                </div>
+
+                <div class="cartao-backup">
+                    <h3>Recuperação entre versões</h3>
+                    <p>Se uma aba antiga alterou os dados, feche todas as outras abas do Trailer Log. Salve as cópias abaixo antes de verificar a recuperação.</p>
+                    <p>A recuperação automática só atualiza os resumos de integridade quando não é necessário alterar registros. Diferenças com risco de perda serão bloqueadas para comparação manual. O arquivo de recuperação guarda as cópias separadas e não substitui um backup comum.</p>
+                    <div class="backup-acoes">
+                        <button type="button" onclick="exportarRecuperacao()">Salvar cópias para recuperação</button>
+                        <button type="button" onclick="verificarRecuperacao()">Verificar recuperação</button>
+                    </div>
+                    <p id="statusRecuperacao" role="status" aria-live="polite"></p>
                 </div>
 
                 <div class="cartao-limpeza">
@@ -316,14 +332,14 @@
                     <h3>🗑️ Limpar Todos os Registros</h3>
 
                     <p>
-                        Exclua todos os registros de Caminhões,
-                        Trailers e Jornadas armazenados neste
-                        navegador.
+                        Esvazie os registros de Caminhões, Trailers e Jornadas
+                        utilizados atualmente pelo aplicativo neste navegador.
                     </p>
 
                     <p>
-                        Esta operação é permanente e não poderá
-                        ser desfeita sem uma cópia de segurança.
+                        As cópias legadas são preservadas e não serão apagadas.
+                        Exporte um backup atual antes de continuar: as cópias
+                        antigas podem não conter todos os registros atuais.
                     </p>
 
                     <button
@@ -367,12 +383,13 @@
         </h2>
 
         <p>
-            Todos os registros de Caminhões, Trailers
-            e Jornadas serão apagados permanentemente.
+            Os registros atuais de Caminhões, Trailers e Jornadas,
+            incluindo a jornada ativa, deixarão de aparecer no aplicativo.
         </p>
 
         <p>
-            Esta ação não poderá ser desfeita.
+            As cópias legadas permanecerão armazenadas. Para recuperar o estado
+            atual depois desta limpeza, será necessário um backup atualizado.
         </p>
 
         <div class="modal-acoes">
@@ -391,7 +408,7 @@
                 class="btn-confirmar"
                 onclick="confirmarLimpeza()">
 
-                Sim, apagar tudo
+                Sim, esvaziar registros atuais
 
             </button>
 
@@ -420,7 +437,7 @@
         </div>
 
         <h2 id="tituloResultado">
-            Registros apagados com sucesso!
+            Registros atuais esvaziados. Cópias legadas preservadas.
         </h2>
 
         <p>Trailer Log</p>
@@ -438,6 +455,8 @@
 </div>
 
 
+<script src="sha256.js"></script>
+<script src="storage.js"></script>
 <script src="backup.js"></script>
 <script>
 
@@ -455,7 +474,10 @@ function alternarTema() {
 // ABRIR CONFIRMAÇÃO
 // ==================================
 
+let tokenLimpeza = null;
 function abrirConfirmacao() {
+    try { tokenLimpeza = TrailerStorage.read().token; }
+    catch (error) { alert(error.message); return; }
 
     document.getElementById("modalConfirmacao")
         .style.display = "flex";
@@ -481,42 +503,23 @@ function fecharConfirmacao() {
 // EXCLUIR DADOS DO TRAILER LOG
 // ==================================
 
-function confirmarLimpeza() {
-
-    // APAGAR SOMENTE AS CHAVES DO APLICATIVO
-
-    const chaves = [
-        "trailersSalvos",
-        "trucksCadastrados",
-        "jornadaAtiva",
-        "jornadasSalvas"
-    ];
-
+async function confirmarLimpeza() {
     try {
-
-        chaves.forEach(function(chave) {
-            localStorage.removeItem(chave);
-        });
-
-        fecharConfirmacao();
-
-        document.getElementById("modalResultado")
-            .style.display = "flex";
-
-    } catch (erro) {
-
-        console.error("Erro ao limpar registros:", erro);
-
-        fecharConfirmacao();
-
-        document.getElementById("tituloResultado")
-            .textContent = "Não foi possível limpar os registros.";
-
-        document.getElementById("modalResultado")
-            .style.display = "flex";
+        if (tokenLimpeza === null) throw Error("Abra a confirmação de limpeza novamente.");
+        await TrailerStorage.change(data => {
+            data.trailersSalvos = [];
+            data.trucksCadastrados = [];
+            data.jornadaAtiva = null;
+            data.jornadasSalvas = [];
+        }, tokenLimpeza);
+        document.getElementById("tituloResultado").textContent = "Registros atuais esvaziados. Cópias legadas preservadas.";
+    } catch (error) {
+        document.getElementById("tituloResultado").textContent = error.message;
     }
+    tokenLimpeza = null;
+    fecharConfirmacao();
+    document.getElementById("modalResultado").style.display = "flex";
 }
-
 
 // ==================================
 // FECHAR MENSAGEM DE RESULTADO
@@ -527,6 +530,20 @@ function fecharResultado() {
     document.getElementById("modalResultado")
         .style.display = "none";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    TrailerStorage.subscribe((current, external, dataChanged) => {
+        if (!external) return;
+        if (dataChanged) avisarAtualizacaoBackup();
+        if (tokenLimpeza !== null && tokenLimpeza !== current.token) {
+            tokenLimpeza = null;
+            fecharConfirmacao();
+            informarBackup("Outra aba atualizou os registros. A confirmação de limpeza foi cancelada; confira os dados antes de tentar novamente.");
+        }
+        // A seleção de arquivo e os textos de backup não são apagados.
+        // A restauração continua verificando seu token antes de gravar.
+    }, error => informarRecuperacao(error.message));
+});
 
 </script>
 

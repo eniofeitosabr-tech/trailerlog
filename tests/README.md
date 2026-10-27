@@ -1,0 +1,65 @@
+# Testes de consistência
+
+Execute `node tests/storage.test.cjs` com Node.js. Os testes usam `Map` e contextos
+JavaScript isolados para representar abas. Não abrem o navegador nem acessam seu
+localStorage. Incluem as funções dos botões de jornada, histórico e backup.
+
+Execute também `node tests/tabs.test.cjs` para sincronização de interface entre
+abas simuladas: jornadas, histórico, formulários parcialmente preenchidos,
+Atualizar/Continuar editando, eventos repetidos e retorno de aba suspensa.
+
+`TrailerStorage.subscribe` compara tokens de estado e consulta novamente ao
+receber eventos de armazenamento, foco e retorno de visibilidade. Não usa polling.
+Rascunhos permanecem intactos; aceitar uma atualização nunca limpa seus campos.
+Enquanto houver atualização pendente, ações de gravação de Registrar são bloqueadas.
+
+## Armazenamento
+
+- `storage.js` é o único ponto de gravação. Web Locks serializa as abas da mesma
+  origem e `localStorage.setItem` publica um único estado em `trailerLogEstadoV2`.
+- As quatro chaves antigas permanecem intactas. A leitura não grava nem migra.
+  Na primeira operação autorizada pelo usuário, os dados legados são incorporados
+  ao estado novo, com identificadores estáveis e campos adicionais preservados.
+- Jornadas mantêm seus IDs anteriores. `registroId` identifica cada registro,
+  inclusive duplicatas legadas. Novos IDs legados usam SHA-256 compacto mais
+  ocorrência; IDs já persistidos não são renomeados. Novos registros usam UUID.
+- O estado compacto (versão interna 3) guarda resumos SHA-256 das fontes antigas
+  em vez de duplicar seu texto. A versão interna 2 continua legível. A atualização
+  ocorre somente em uma gravação solicitada; abrir a página não migra dados.
+- Um JSON inválido bloqueia a operação: nunca é convertido silenciosamente em
+  lista vazia. Uma falha de gravação mantém integralmente o estado anterior.
+- Restauração e limpeza verificam o estado que o usuário confirmou. Exclusões
+  conferem ID e conteúdo; não usam um índice antigo para remover outro registro.
+- A exportação mantém o formato de backup versão 1, incluindo `registroId` como
+  campo adicional. Backups anteriores e JSON legado continuam aceitos.
+
+## Limites
+
+Use a mesma origem (protocolo, host e porta), preferencialmente localhost ou HTTPS,
+em navegador com Web Locks e `crypto.randomUUID()`. Sem Web Locks, leituras
+continuam disponíveis e gravações são bloqueadas com aviso.
+
+Feche abas que ainda executam o código anterior antes de usar a atualização.
+Se alterarem as chaves antigas, o aplicativo bloqueia a leitura/gravação em vez
+de escolher silenciosamente uma das cópias. Em Configurações, a seção Recuperação
+entre versões permite baixar todas as cópias brutas, inclusive JSON corrompido.
+Esse arquivo de diagnóstico não é aceito pela restauração comum.
+
+A recuperação automática exige confirmação e só atualiza metadados quando cada
+fonte alterada é semanticamente equivalente à origem conhecida ou aos dados
+atuais. Não une listas, não descarta registros, não ressuscita exclusões e não
+grava nas chaves antigas. Alterações de conteúdo ambíguas exigem comparação manual.
+Falta de espaço, cancelamento e mudanças depois da verificação não alteram o estado.
+
+As cópias legadas preservadas e o estado novo consomem espaço adicional. Falta de
+espaço é reportada sem publicar alterações. A exclusão/limpeza atual retira os
+registros do estado utilizado pelo aplicativo, preservando a fonte legada.
+
+Os testes não substituem validação em navegadores reais, nem simulam perda física
+do disco. Backup externo continua necessário.
+
+As regressões incluem eventos locais/externos, recuperação equivalente/ambígua,
+cópias corrompidas, confirmação desatualizada, formato V2, compatibilidade de backup,
+vetores SHA-256 UTF-8 e volume fictício de 500 registros. IDs longos já existentes
+são preservados por compatibilidade; o limite e o custo síncrono do localStorage
+continuam existindo. Teste em dispositivos reais antes da publicação.

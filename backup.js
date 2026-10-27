@@ -45,6 +45,7 @@ function validarDadosBackup(dados) {
             dados[chave].forEach(item => validarRegistro(item, chave));
         }
     }
+    TrailerStorage.validate(dados);
     return dados;
 }
 
@@ -67,11 +68,7 @@ function informarBackup(mensagem) {
 function exportarBackup() {
     let url;
     try {
-        const dados = {};
-        for (const chave of CHAVES_BACKUP) {
-            const bruto = localStorage.getItem(chave);
-            dados[chave] = bruto === null ? (chave === "jornadaAtiva" ? null : []) : JSON.parse(bruto);
-        }
+        const dados = TrailerStorage.read().data;
         validarDadosBackup(dados);
         const arquivo = { aplicativo: "Trailer Log", versao: 1, exportadoEm: new Date().toISOString(), dados };
         url = URL.createObjectURL(new Blob([JSON.stringify(arquivo, null, 2)], { type: "application/json" }));
@@ -89,46 +86,96 @@ function exportarBackup() {
     }
 }
 
-function aplicarDadosBackup(dados) {
+async function aplicarDadosBackup(dados, token) {
     validarDadosBackup(dados);
-    const anteriores = {};
-    const novos = {};
-    // Leitura e serialização completas antes da primeira alteração.
-    for (const chave of CHAVES_BACKUP) {
-        anteriores[chave] = localStorage.getItem(chave);
-        novos[chave] = JSON.stringify(dados[chave]);
-    }
-    const alteradas = [];
-    try {
-        for (const chave of CHAVES_BACKUP) {
-            localStorage.setItem(chave, novos[chave]);
-            alteradas.push(chave);
-        }
-    } catch (erro) {
-        // Desfaz somente escritas concluídas, preservando até o texto JSON original.
-        for (const chave of alteradas) localStorage.removeItem(chave);
-        for (const chave of alteradas) {
-            if (anteriores[chave] !== null) localStorage.setItem(chave, anteriores[chave]);
-        }
-        throw erro;
-    }
+    return TrailerStorage.change(atual => {
+        for (const chave of CHAVES_BACKUP) atual[chave] = JSON.parse(JSON.stringify(dados[chave]));
+    }, token);
 }
 
+let restauracaoEmAndamento = false;
+let atualizacaoBackupPendente = false;
+let liberarAtualizacaoBackup = null;
+function avisarAtualizacaoBackup() {
+    const input = document.getElementById("arquivoBackup");
+    if (!restauracaoEmAndamento && !(input.files && input.files.length)) return;
+    if (!atualizacaoBackupPendente) {
+        document.getElementById("textoAtualizacaoBackup").textContent = "Outra aba atualizou os registros. O arquivo selecionado foi preservado. Escolha Atualizar para conferir o estado antes de restaurar, ou Continuar editando para aguardar.";
+        document.getElementById("btnContinuarBackup").hidden = false;
+    }
+    atualizacaoBackupPendente = true;
+    document.getElementById("avisoAtualizacaoBackup").hidden = false;
+}
+function aceitarAtualizacaoBackup() {
+    try {
+        TrailerStorage.read();
+        atualizacaoBackupPendente = false;
+        document.getElementById("avisoAtualizacaoBackup").hidden = true;
+        if (liberarAtualizacaoBackup) { const liberar = liberarAtualizacaoBackup; liberarAtualizacaoBackup = null; liberar(); }
+    } catch (error) { informarBackup(error.message); }
+}
+function continuarEditandoBackup() {
+    document.getElementById("textoAtualizacaoBackup").textContent = "Arquivo preservado. A restauração aguardará sua escolha em Atualizar e uma nova confirmação antes de substituir registros.";
+    document.getElementById("btnContinuarBackup").hidden = true;
+}
 async function restaurarBackup(input) {
+    if (restauracaoEmAndamento) return informarBackup("Já existe uma restauração em preparação. Conclua a escolha pendente antes de selecionar outro arquivo.");
     try {
         const arquivo = input.files[0];
         if (!arquivo) return;
+        restauracaoEmAndamento = true;
+        input.disabled = true;
         const dados = lerArquivoBackup(await arquivo.text());
+        if (atualizacaoBackupPendente) await new Promise(resolve => { liberarAtualizacaoBackup = resolve; });
         const resumo = `${dados.trucksCadastrados.length} caminhão(ões), ${dados.trailersSalvos.length} utilização(ões) de trailer, ${dados.jornadasSalvas.length} jornada(s) salva(s) e ${dados.jornadaAtiva ? "1 jornada ativa" : "nenhuma jornada ativa"}.`;
+        const token = TrailerStorage.read().token;
         if (!confirm("Backup validado: " + resumo + "\n\nA restauração SUBSTITUI todos os registros atuais, incluindo a jornada ativa. Feche outras abas do Trailer Log antes de continuar.\n\nDeseja restaurar este backup?")) {
             informarBackup("Restauração cancelada. Nenhum dado foi alterado.");
             return;
         }
-        aplicarDadosBackup(dados);
+        await aplicarDadosBackup(dados, token);
         informarBackup("Backup restaurado com sucesso: " + resumo);
     } catch (erro) {
         informarBackup("Não foi possível restaurar o backup. " + erro.message);
     } finally {
         input.value = "";
+        input.disabled = false;
+        restauracaoEmAndamento = false;
+        atualizacaoBackupPendente = false;
+        document.getElementById("avisoAtualizacaoBackup").hidden = true;
     }
+}
+
+function informarRecuperacao(mensagem) {
+    document.getElementById("statusRecuperacao").textContent = mensagem;
+}
+
+function exportarRecuperacao() {
+    let url;
+    try {
+        const arquivo = TrailerStorage.recoveryArchive();
+        url = URL.createObjectURL(new Blob([JSON.stringify(arquivo, null, 2)], { type: "application/json" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "trailer-log-recuperacao-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        informarRecuperacao("Download das cópias solicitado. Confirme que o arquivo foi salvo e guarde-o para comparação manual; ele não é um backup comum.");
+    } catch (error) { informarRecuperacao("Não foi possível salvar as cópias. " + error.message); }
+    finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
+}
+
+async function verificarRecuperacao() {
+    try {
+        const plano = TrailerStorage.planRecovery();
+        informarRecuperacao(plano.message);
+        if (!plano.safe || !plano.conflict) return;
+        if (!confirm(plano.message + "\n\nFeche as outras abas antes de continuar. Confirmar recuperação sem alterar registros nem apagar cópias?")) {
+            informarRecuperacao("Recuperação cancelada. Nenhum dado foi alterado.");
+            return;
+        }
+        await TrailerStorage.recover(plano.token);
+        informarRecuperacao("Funcionamento recuperado. Registros e cópias legadas preservados. Recarregue as outras páginas do aplicativo.");
+    } catch (error) { informarRecuperacao(error.message); }
 }
