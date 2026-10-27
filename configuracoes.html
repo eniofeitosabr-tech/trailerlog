@@ -233,7 +233,7 @@
     <noscript><style>#appCarregando { display: none !important; }</style></noscript>
 </head>
 
-<body>
+<body data-requires-auth="true">
 <section id="appCarregando" class="app-inicializacao" role="status" aria-live="polite"><p>Carregando Trailer Log...</p></section>
 <section id="appFalhou" class="app-inicializacao" role="alert" hidden><h2>Não foi possível carregar o Trailer Log</h2><p>Verifique sua conexão e tente novamente. Seus registros foram preservados.</p><button type="button" onclick="location.reload()">Tentar novamente</button><a href="login.html">Conferir conta</a></section>
 <noscript><section class="app-inicializacao"><h2>Ative o JavaScript</h2><p>O Trailer Log precisa de JavaScript para verificar sua conta e carregar seus registros com segurança.</p><p>Após ativá-lo, recarregue esta página.</p></section></noscript>
@@ -269,7 +269,7 @@
             </a>
 
             <a href="sobre.html">ℹ️ Sobre</a>
-        <a href="login.html">👤 Conta / Account</a>
+        <a href="login.html" data-auth-logout>👤 Sair da conta</a>
 </nav>
 <p id="contaStatus" class="conta-sessao" role="status"></p>
 

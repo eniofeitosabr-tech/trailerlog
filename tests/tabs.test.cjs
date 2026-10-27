@@ -7,6 +7,9 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const source = name => fs.readFileSync(path.join(root, name), 'utf8');
 async function main() {
+    const owner = '10000000-0000-4000-8000-000000000001';
+    const prefix = 'trailerlog:user:' + owner + ':';
+    const logicalKey = key => { assert(key.startsWith(prefix), 'acesso sem conta'); return key.slice(prefix.length); };
     const data = new Map(), tabs = [], events = [];
     let queue = Promise.resolve();
     const locks = { request: (name, callback) => {
@@ -17,15 +20,20 @@ async function main() {
         const element = () => ({ value: '', style: {}, hidden: true, textContent: '', innerHTML: '',
             selectedIndex: 0, selectedOptions: [{ text: 'Bom' }], classList: { toggle() {} }, focus() {} });
         const get = id => { if (!controls.has(id)) controls.set(id, element()); return controls.get(id); };
-        const fire = event => { for (const callback of handlers[event.type] || []) callback(event); };
+        const fire = event => {
+            if (event.type === 'storage' && event.key !== null && !event.key.startsWith(prefix)) event = { ...event, key: prefix + event.key };
+            for (const callback of handlers[event.type] || []) callback(event);
+        };
         const context = vm.createContext({ console, crypto, TextEncoder: require('node:util').TextEncoder,
+            TrailerAuth: { configured: true, scope: () => owner, authorize: async expected => { assert.equal(expected, owner); },
+                ready: { then(fn) { fn(); } } },
             Event: class { constructor(type) { this.type = type; } },
             navigator: { locks },
             window: { addEventListener: (type, fn) => (handlers[type] ??= []).push(fn), dispatchEvent: fire },
             document: { getElementById: get, querySelector: () => get('startButton'), visibilityState: 'visible',
                 addEventListener: (type, fn) => (docHandlers[type] ??= []).push(fn) },
-            localStorage: { getItem: key => data.get(key) ?? null, setItem: (key, value) => {
-                const previous = data.get(key); data.set(key, value);
+            localStorage: { getItem: key => data.get(logicalKey(key)) ?? null, setItem: (key, value) => {
+                const previous = data.get(logicalKey(key)); data.set(logicalKey(key), value);
                 if (previous !== value) for (const other of tabs) if (other.context !== context) events.push(() => other.fire({ type: 'storage', key }));
             } },
             mostrarModal: message => messages.push(message), alert: message => messages.push(message), confirm: () => true

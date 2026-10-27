@@ -75,7 +75,7 @@ async function main() {
     let posts = 0, tamperSDK = false, missingHandlers = false;
     const server = http.createServer(async (request, response) => {
         if (request.method !== 'GET') { posts++; request.resume(); response.writeHead(405).end(); return; }
-        const relative = decodeURIComponent(new URL(request.url, 'http://localhost').pathname).replace(/^\/trailerlog\//, '');
+        const relative = decodeURIComponent(new URL(request.url, 'http://localhost').pathname).replace(/^\/trailerlog\//, '').replace(/^\//, '');
         const file = path.resolve(root, relative);
         if (!file.startsWith(root + path.sep) || !/\.(html|js|css|jpg)$/.test(file)) { response.writeHead(404).end(); return; }
         if (missingHandlers && relative === 'auth-page.js') { response.writeHead(404).end(); return; }
@@ -92,8 +92,8 @@ async function main() {
     try {
         const version = await jsonGet('http://127.0.0.1:9229/json/version');
         browser = await connect(version.webSocketDebuggerUrl);
-        async function tab(disableJS = false) {
-            const { browserContextId } = await browser.send('Target.createBrowserContext');
+        async function tab(disableJS = false, appPath = '/trailerlog/') {
+            const { browserContextId } = await browser.send('Target.createBrowserContext', { disposeOnDetach: true });
             const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
             const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });
             const send = (method, params) => browser.send(method, params, sessionId);
@@ -108,16 +108,18 @@ async function main() {
                 if (request.url.startsWith(origin + '/')) { send('Fetch.continueRequest', { requestId }).catch(() => {}); return; }
                 external.push(new URL(request.url).origin);
                 const isToken = request.url.startsWith('https://oeolpogdfqtqcjnqqfqm.supabase.co/auth/v1/token?grant_type=password');
-                if (isToken && request.method === 'OPTIONS') {
+                const isUser = request.url === 'https://oeolpogdfqtqcjnqqfqm.supabase.co/auth/v1/user';
+                const isLogout = request.url.startsWith('https://oeolpogdfqtqcjnqqfqm.supabase.co/auth/v1/logout');
+                if ((isToken || isUser || isLogout) && request.method === 'OPTIONS') {
                     send('Fetch.fulfillRequest', { requestId, responseCode: 204, responseHeaders: [
                         { name: 'Access-Control-Allow-Origin', value: '*' },
-                        { name: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' },
+                        { name: 'Access-Control-Allow-Methods', value: 'GET, POST, OPTIONS' },
                         { name: 'Access-Control-Allow-Headers', value: 'authorization, apikey, content-type, x-client-info, x-supabase-api-version' }
                     ] }).catch(() => {});
-                } else if (isToken) {
-                    tokenRequests++;
+                } else if (isToken || isUser || isLogout) {
+                    if (isToken) tokenRequests++;
                     const user = { id: '10000000-0000-4000-8000-000000000001', email: 'fixture@example.invalid' };
-                    const body = { access_token: 'fixture-access', refresh_token: 'fixture-refresh', token_type: 'bearer', expires_in: 3600, user };
+                    const body = isUser ? user : isLogout ? {} : { access_token: 'fixture-access', refresh_token: 'fixture-refresh', token_type: 'bearer', expires_in: 3600, user };
                     send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [
                         { name: 'Content-Type', value: 'application/json' }, { name: 'Access-Control-Allow-Origin', value: '*' }
                     ], body: Buffer.from(JSON.stringify(body)).toString('base64') }).catch(() => {});
@@ -128,7 +130,7 @@ async function main() {
             await send('Emulation.setScriptExecutionDisabled', { value: disableJS });
             async function evaluate(expression) {
                 const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
-                assert(!result.exceptionDetails, 'Erro na avaliação de teste no navegador');
+                assert(!result.exceptionDetails, 'Erro no navegador: ' + (result.exceptionDetails && result.exceptionDetails.exception && result.exceptionDetails.exception.description || '').split('\n')[0]);
                 return result.result.value;
             }
             async function waitFor(expression) {
@@ -140,7 +142,8 @@ async function main() {
             }
             return { send, evaluate, waitFor, external,
                 tokens: () => tokenRequests, blocked: () => cspBlocks,
-                async navigate(page) { await send('Page.navigate', { url: origin + '/trailerlog/' + page }); await waitFor('document.readyState === "complete" && !!document.getElementById("authForm")'); },
+                async open(page) { await send('Page.navigate', { url: origin + appPath + page }); },
+                async navigate(page) { await send('Page.navigate', { url: origin + appPath + page }); await waitFor('document.readyState === "complete" && !!document.getElementById("authForm")'); },
                 async close() { unlisten(); await browser.send('Target.disposeBrowserContext', { browserContextId }); }
             };
         }
@@ -161,8 +164,26 @@ async function main() {
                 assert.equal(noJS.external.length, 0);
             } finally { await noJS.close(); }
         }
-        const normal = await tab();
+        for (const page of ['index.html', 'historico.html', 'configuracoes.html']) {
+            console.log('Chrome visitante: ' + page);
+            const visitor = await tab();
+            try {
+                await visitor.open(page);
+                await visitor.waitFor('location.pathname.endsWith("/login.html") && !!document.getElementById("authForm")');
+                assert(await visitor.evaluate('typeof TrailerStorage === "undefined"'), 'nenhum armazenamento privado na tela de login');
+            } finally { await visitor.close(); }
+            const noJSPrivate = await tab(true);
+            try {
+                console.log('Chrome privado sem JS: ' + page);
+                await noJSPrivate.open(page);
+                await noJSPrivate.waitFor('document.readyState === "complete" && !!document.querySelector(".app-layout")');
+                assert(await noJSPrivate.evaluate('document.querySelector(".app-layout").hidden'));
+            } finally { await noJSPrivate.close(); }
+        }
+        // Contexto anônimo novo na raiz do localhost, como no Live Server.
+        const normal = await tab(false, '/');
         try {
+            console.log('Chrome anônimo: login inicial');
             await normal.navigate('login.html');
             await normal.waitFor('!document.getElementById("submitAuth").disabled');
             assert(await normal.evaluate('typeof window.supabase.createClient === "function"'), 'SDK local executa sob CSP/SRI');
@@ -170,11 +191,48 @@ async function main() {
                 await normal.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width === 320 });
                 assert(await normal.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'overflow no formulário');
             }
+            await normal.evaluate('localStorage.setItem("trailersSalvos",JSON.stringify([{trailer:"GLOBAL-FICTICIO"}])); localStorage.setItem("trailerlog:user:10000000-0000-4000-8000-000000000002:trailersSalvos",JSON.stringify([{trailer:"CONTA-B-FICTICIA"}])); true');
             await normal.evaluate('document.getElementById("email").value="fixture@example.invalid"; document.getElementById("password").value="FICTICIO-apenas-teste"; document.getElementById("submitAuth").click(); true');
-            await normal.waitFor('document.getElementById("authStatus").textContent.includes("Login realizado")');
+            await normal.waitFor('location.pathname.endsWith("/index.html") && !!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden');
+            console.log('Chrome anônimo: foco e revalidação');
+            for (let i = 0; i < 3; i++) {
+                await normal.evaluate('window.dispatchEvent(new Event("focus")); true');
+                await normal.waitFor('!TrailerAuth.verificationPending && !document.querySelector(".app-layout").hidden');
+                assert(await normal.evaluate('getComputedStyle(document.getElementById("modalSucesso")).display === "none"'), 'foco não deve abrir aviso de conta indisponível');
+                assert(await normal.evaluate('document.getElementById("contaStatus").textContent.includes("fixture@example.invalid")'));
+            }
+            assert.equal(await normal.evaluate('TrailerStorage.read().data.trailersSalvos.length'), 0, 'não importar legado global nem dados de B');
+            console.log('Chrome anônimo: iniciar jornada e cadastrar caminhão');
+            await normal.evaluate('document.getElementById("truck").value="TRUCK-TESTE-ANONIMO"; document.getElementById("truckCondition").value="Bom"; document.querySelector(\'button[onclick="iniciarJornada()"]\').click(); true');
+            await normal.waitFor('document.getElementById("modalSucesso").querySelector("h2").textContent.includes("Jornada iniciada")');
+            assert(await normal.evaluate('TrailerStorage.read().data.trucksCadastrados.some(t => t.numero === "TRUCK-TESTE-ANONIMO")'));
+            await normal.evaluate('fecharModal(); true');
+            console.log('Chrome anônimo: leitura e navegação');
+            await normal.evaluate('TrailerStorage.change(d=>d.trailersSalvos.push({trailer:"CONTA-A-FICTICIA"})).then(()=>true)');
+            for (const page of ['historico.html', 'configuracoes.html', 'index.html']) {
+                await normal.open(page);
+                await normal.waitFor('!!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden && location.pathname.endsWith("/' + page + '")');
+                assert.equal(await normal.evaluate('TrailerStorage.read().data.trailersSalvos[0].trailer'), 'CONTA-A-FICTICIA');
+            }
             assert.equal(normal.tokens(), 1, 'login deve chamar somente o endpoint Auth interceptado');
             assert(normal.external.every(host => host === 'https://oeolpogdfqtqcjnqqfqm.supabase.co'));
             assert.equal(posts, 0);
+            await normal.evaluate('document.querySelector("[data-auth-logout]").click(); true');
+            console.log('Chrome anônimo: logout');
+            await normal.waitFor('location.pathname.endsWith("/login.html") && !!document.getElementById("authForm") && !document.getElementById("submitAuth").disabled');
+            assert(await normal.evaluate('localStorage.getItem("trailerlog:user:10000000-0000-4000-8000-000000000001:trailerLogEstadoV2").includes("CONTA-A-FICTICIA")'));
+            assert(await normal.evaluate('localStorage.getItem("trailersSalvos").includes("GLOBAL-FICTICIO")'));
+            await normal.open('configuracoes.html');
+            await normal.waitFor('location.pathname.endsWith("/login.html") && !!document.getElementById("authForm")');
+            await normal.waitFor('!document.getElementById("submitAuth").disabled');
+            console.log('Chrome anônimo: novo login');
+            await normal.evaluate('document.getElementById("email").value="fixture@example.invalid"; document.getElementById("password").value="FICTICIO-apenas-teste"; document.getElementById("submitAuth").click(); true');
+            await normal.waitFor('location.pathname.endsWith("/index.html") && !!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden');
+            assert(await normal.evaluate('TrailerStorage.read().data.trucksCadastrados.some(t => t.numero === "TRUCK-TESTE-ANONIMO")'), 'registro criado pela interface deve continuar disponível após novo login');
+            await normal.evaluate('window.dispatchEvent(new Event("focus")); true');
+            await normal.waitFor('!TrailerAuth.verificationPending && !document.querySelector(".app-layout").hidden');
+            assert(await normal.evaluate('getComputedStyle(document.getElementById("modalSucesso")).display === "none"'));
+            assert.equal(normal.tokens(), 2);
         } finally { await normal.close(); }
         tamperSDK = true;
         const tampered = await tab();
@@ -192,9 +250,10 @@ async function main() {
             assert(await missing.evaluate('Array.from(document.querySelectorAll("#authForm input, #authForm button")).every(e => e.disabled)'));
             assert.equal(missing.external.length, 0);
         } finally { await missing.close(); }
-        console.log('PASSOU Chrome: quatro páginas sem JS, CSP bloqueia POST nativo, SDK real com SRI, login interceptado, larguras 320/1280, bundle adulterado rejeitado e handlers ausentes bloqueiam formulário. Nenhum pedido chegou ao Supabase.');
+        console.log('PASSOU Chrome: contexto anônimo em localhost, foco sem erro transitório, login, Registrar, cadastro/leitura de caminhão pela interface, logout, novo login e registro preservado; CSP/SRI, visitantes, isolamento e legado. SDK real com rede simulada; nenhum pedido chegou ao Supabase.');
     } finally {
         if (browser) browser.close();
+        server.closeAllConnections();
         await new Promise(resolve => server.close(resolve));
     }
 }

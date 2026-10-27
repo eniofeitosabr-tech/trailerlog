@@ -344,7 +344,7 @@
     <noscript><style>#appCarregando { display: none !important; }</style></noscript>
 </head>
 
-<body>
+<body data-requires-auth="true">
 <section id="appCarregando" class="app-inicializacao" role="status" aria-live="polite"><p>Carregando Trailer Log...</p></section>
 <section id="appFalhou" class="app-inicializacao" role="alert" hidden><h2>Não foi possível carregar o Trailer Log</h2><p>Verifique sua conexão e tente novamente. Seus registros foram preservados.</p><button type="button" onclick="location.reload()">Tentar novamente</button><a href="login.html">Conferir conta</a></section>
 <noscript><section class="app-inicializacao"><h2>Ative o JavaScript</h2><p>O Trailer Log precisa de JavaScript para verificar sua conta e carregar seus registros com segurança.</p><p>Após ativá-lo, recarregue esta página.</p></section></noscript>
@@ -379,7 +379,7 @@
             </a>
 
             <a href="sobre.html">ℹ️ Sobre</a>
-        <a href="login.html">👤 Conta / Account</a>
+        <a href="login.html" data-auth-logout>👤 Sair da conta</a>
 </nav>
 <p id="contaStatus" class="conta-sessao" role="status"></p>
 
@@ -519,8 +519,12 @@ function alternarTema() {
 // ==================================
 
 let snapshotHistorico = null;
-function carregarLista(chave) { return snapshotHistorico.data[chave]; }
-function carregarJornadaAtiva() { return snapshotHistorico.data.jornadaAtiva; }
+function carregarLista(chave) { TrailerAuth.scope(); return snapshotHistorico.data[chave]; }
+function carregarJornadaAtiva() { TrailerAuth.scope(); return snapshotHistorico.data.jornadaAtiva; }
+window.addEventListener("traileraccountchange", () => {
+    snapshotHistorico = null;
+    document.getElementById("historico").textContent = "";
+});
 
 // ==================================
 // SEGURANÇA PARA MOSTRAR TEXTO
@@ -648,8 +652,8 @@ function mostrarMensagem(titulo, descricao) {
 // ==================================
 
 function mostrarHistorico(snapshot) {
-    try { snapshotHistorico = snapshot && snapshot.data ? snapshot : TrailerStorage.read(); }
-    catch (error) { mostrarMensagem("Não foi possível carregar o histórico", error.message); return; }
+    try { TrailerAuth.scope(); snapshotHistorico = snapshot && snapshot.data ? snapshot : TrailerStorage.read(); }
+    catch (error) { snapshotHistorico = null; mostrarMensagem("Não foi possível carregar o histórico", error.message); return; }
 
     const pesquisa = document
         .getElementById("campoPesquisa")
@@ -1070,6 +1074,7 @@ function mostrarHistoricoTruck(numero) {
 // ==================================
 
 async function excluirTrailer(index) {
+    try { TrailerAuth.scope(); } catch (_) { return alert("Entre novamente para acessar os registros."); }
     const registro = snapshotHistorico && snapshotHistorico.data.trailersSalvos[index];
     if (!registro) return alert("Registro não encontrado. Atualize a pesquisa.");
     if (!confirm("Deseja realmente excluir o registro do Trailer " + registro.trailer + "?\n\nEssa ação não poderá ser desfeita.")) return;

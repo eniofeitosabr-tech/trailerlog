@@ -1,5 +1,10 @@
 # Testes de consistência
 
+Execute `node tests/access.test.cjs` para login obrigatório: visitantes,
+configuração ausente, sessão inválida/expirada, indisponibilidade, validação online
+antes de gravar, isolamento A/B, legado global intacto, operações em fila e logout
+com falha/retry e propagação entre abas. Nenhum serviço real é acessado.
+
 Execute `node tests/security.test.cjs` para validar CSP, formulários desabilitados
 sem JavaScript, mensagens noscript, identificação e integridade do SDK local.
 
@@ -9,7 +14,13 @@ isolado e `--remote-debugging-port=9229`, sem usar seu perfil pessoal. Execute
 O teste serve o projeto somente em localhost, usa contextos descartáveis e
 intercepta toda rede externa. Verifica quatro páginas com JavaScript desabilitado,
 POST nativo bloqueado pela CSP, SRI, adulteração do bundle, handlers ausentes,
-login com resposta fictícia e larguras 320/1280. Nunca usa contas ou senhas reais.
+login com resposta fictícia e larguras 320/1280. Também verifica as três páginas
+privadas, sessão válida, legado, isolamento e logout. Nunca usa contas ou senhas reais.
+O fluxo anônimo usa também a raiz do localhost: login, foco/revalidação, cadastro
+de caminhão pela interface, leitura, logout e novo login com o registro preservado.
+Regressões de foco/visibilidade e da primeira assinatura durante revalidação também
+são verificadas em `access.test.cjs`; leituras diretas continuam bloqueadas enquanto
+a validação estiver pendente.
 
 Execute também `node tests/recovery.test.cjs` para recuperação de senha: destino
 explícito, inscrição inicial do evento, validação, isolamento da sessão, links
@@ -32,10 +43,12 @@ Enquanto houver atualização pendente, ações de gravação de Registrar são 
 ## Armazenamento
 
 - `storage.js` é o único ponto de gravação. Web Locks serializa as abas da mesma
-  origem e `localStorage.setItem` publica um único estado em `trailerLogEstadoV2`.
-- As quatro chaves antigas permanecem intactas. A leitura não grava nem migra.
-  Na primeira operação autorizada pelo usuário, os dados legados são incorporados
-  ao estado novo, com identificadores estáveis e campos adicionais preservados.
+  origem/conta e `localStorage.setItem` publica um estado em
+  `trailerlog:user:<UUID>:trailerLogEstadoV2`, sem fallback de visitante.
+- As quatro chaves globais antigas permanecem intactas e não são importadas.
+  A leitura não grava nem migra. As fontes legadas que já pertencem ao namespace
+  da conta são incorporadas na primeira operação autorizada pelo usuário,
+  com identificadores estáveis e campos adicionais preservados.
 - Jornadas mantêm seus IDs anteriores. `registroId` identifica cada registro,
   inclusive duplicatas legadas. Novos IDs legados usam SHA-256 compacto mais
   ocorrência; IDs já persistidos não são renomeados. Novos registros usam UUID.

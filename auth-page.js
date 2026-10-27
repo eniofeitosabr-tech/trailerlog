@@ -4,7 +4,7 @@ const AuthPage = (() => {
             email: "E-mail", pass: "Senha do Trailer Log", confirm: "Confirmar senha", newPass: "Nova senha do Trailer Log (mínimo de 8 caracteres)",
             forgot: "Esqueci minha senha", back: "Voltar ao aplicativo", language: "Idioma", theme: "Alternar tema",
             intro: "Use uma senha exclusiva para sua conta Trailer Log. A autenticação é feita pelo Supabase. Seus registros continuam neste navegador, sem sincronização na nuvem.",
-            unavailable: "Supabase ainda não configurado. Você pode continuar usando o aplicativo no modo local.",
+            unavailable: "Autenticação não configurada. O acesso aos registros está bloqueado.",
             busy: "Aguarde…", mismatch: "As senhas não coincidem.", weak: "Use uma senha com pelo menos 8 caracteres.",
             signed: "Login realizado. Abra o aplicativo para acessar o espaço local desta conta; a sincronização na nuvem ainda não está habilitada.",
             created: "Se o cadastro puder ser concluído, você receberá as instruções por e-mail. Confira sua caixa de entrada e spam.",
@@ -22,7 +22,7 @@ const AuthPage = (() => {
             email: "Email", pass: "Trailer Log password", confirm: "Confirm password", newPass: "New Trailer Log password (at least 8 characters)",
             forgot: "Forgot password", back: "Back to app", language: "Language", theme: "Toggle theme",
             intro: "Use a unique password for your Trailer Log account. Supabase handles authentication. Your records stay in this browser, without cloud sync.",
-            unavailable: "Supabase is not configured yet. You can continue using the app in local mode.",
+            unavailable: "Authentication is not configured. Access to records is blocked.",
             busy: "Please wait…", mismatch: "Passwords do not match.", weak: "Use a password with at least 8 characters.",
             signed: "Signed in. Open the app to access this account's local workspace; cloud sync is not enabled yet.",
             created: "If registration can be completed, instructions will be sent by email. Check your inbox and spam folder.",
@@ -69,6 +69,7 @@ const AuthPage = (() => {
             || (mode === "password" && !TrailerAuth.recoveryReady);
         el("authForm").querySelectorAll("input, button").forEach(node => { node.disabled = disabled; });
         el("logoutAuth").disabled = value || !handlersReady || !authReady || !TrailerAuth.configured || !!TrailerAuth.error;
+        el("retryAuth").hidden = !TrailerAuth.error;
         el("submitAuth").textContent = t(value ? "busy" : mode);
     }
     async function submit(event) {
@@ -108,6 +109,7 @@ const AuthPage = (() => {
         try { localStorage.setItem("trailerlog-theme", document.body.classList.contains("dark-mode") ? "dark" : "light"); } catch (_) {}
     });
     el("authForm").addEventListener("submit", submit);
+    el("retryAuth").addEventListener("click", () => window.location.reload());
     el("logoutAuth").addEventListener("click", async () => {
         if (busy) return;
         if (!TrailerAuth.configured) return status("unavailable", true);

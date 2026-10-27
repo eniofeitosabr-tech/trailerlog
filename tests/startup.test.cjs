@@ -7,7 +7,8 @@ const root = path.resolve(__dirname, '..');
 const source = file => fs.readFileSync(path.join(root, file), 'utf8');
 const A = '10000000-0000-4000-8000-000000000001';
 const B = '10000000-0000-4000-8000-000000000002';
-function harness({ stalled = false, session = null, stalledUser = false, broken = false } = {}) {
+const sessionFor = () => ({ access_token: 'fixture-access', expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: A } });
+function harness({ stalled = false, session = sessionFor(), stalledUser = false, broken = false } = {}) {
     const nodes = new Map(), timers = new Map(), events = {};
     let callback, releaseSession;
     const node = id => {
@@ -16,13 +17,14 @@ function harness({ stalled = false, session = null, stalledUser = false, broken 
     };
     const context = vm.createContext({ URL, URLSearchParams, console,
         crypto: require('node:crypto'), TextEncoder: require('node:util').TextEncoder,
+        navigator: { onLine: true },
         localStorage: { getItem: () => null },
         Event: class { constructor(type) { this.type = type; } },
         setTimeout(fn, ms) { const id = {}; timers.set(id, { fn, ms }); return id; },
         clearTimeout(id) { timers.delete(id); },
-        document: { getElementById: node, querySelector: () => node('app'),
+        document: { getElementById: node, querySelector: () => node('app'), querySelectorAll: () => [],
             documentElement: { lang: 'pt-BR' }, addEventListener() {} },
-        window: { location: { href: 'https://fixture.example/trailerlog/index.html' }, isSecureContext: true, TRAILER_SUPABASE_CONFIG: {
+        window: { location: { href: 'https://fixture.example/trailerlog/index.html', replace() {} }, isSecureContext: true, TRAILER_SUPABASE_CONFIG: {
             url: 'https://fixture.supabase.co', publishableKey: 'sb_publishable_fixture'
         }, dispatchEvent(event) { for (const fn of events[event.type] || []) fn(event); },
         addEventListener(name, fn) { (events[name] ??= []).push(fn); },
@@ -39,7 +41,7 @@ function harness({ stalled = false, session = null, stalledUser = false, broken 
     run(source('app-startup.js'));
     return { run, node, context, timers, events,
         auth: () => run(source('auth.js')),
-        change: user => callback({ type: 'SIGNED_IN' }, { user }),
+        change: user => callback('SIGNED_IN', { user }),
         release: value => releaseSession(value),
         expire(ms) { for (const [id, timer] of [...timers]) if (timer.ms === ms) { timers.delete(id); timer.fn(); } }
     };
@@ -66,7 +68,7 @@ async function main() {
     reverse.auth(); await reverse.run('TrailerAuth.ready');
     assert.equal(reverse.node('app').hidden, false);
 
-    for (const options of [{ stalled: true }, { session: { user: { id: A } }, stalledUser: true }]) {
+    for (const options of [{ stalled: true }, { session: sessionFor(), stalledUser: true }]) {
         const slow = harness(options);
         slow.auth(); await flush();
         slow.expire(12000); await slow.run('TrailerAuth.ready');
@@ -101,7 +103,7 @@ async function main() {
         for (const fn of data.events.focus || []) fn({ type: 'focus' });
         assert.equal(data.run('renderCount'), 0);
         assert.equal(data.run('errorCount'), 0);
-        data.release({ data: { session: null }, error: null });
+        data.release({ data: { session: sessionFor() }, error: null });
         await data.run('TrailerAuth.ready'); await flush();
         assert.equal(data.run('renderCount'), 1);
         assert.equal(data.node('app').hidden, renderFails);

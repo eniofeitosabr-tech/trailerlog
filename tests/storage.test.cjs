@@ -7,6 +7,10 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'storage.js'), 'utf8');
 const empty = () => ({ trailersSalvos: [], trucksCadastrados: [], jornadaAtiva: null, jornadasSalvas: [] });
+// Estes fixtures legados pertencem a uma conta fictícia; não são o legado global.
+const owner = '10000000-0000-4000-8000-000000000001';
+const prefix = 'trailerlog:user:' + owner + ':';
+const logicalKey = key => { assert(key.startsWith(prefix), 'acesso sem namespace autenticado'); return key.slice(prefix.length); };
 function environment(initial = {}) {
     const map = new Map(Object.entries(initial));
     let queue = Promise.resolve();
@@ -19,9 +23,11 @@ function environment(initial = {}) {
     function tab() {
         const listeners = {};
         const context = vm.createContext({
+            TrailerAuth: { configured: true, scope: () => owner, authorize: async expected => { assert.equal(expected, owner); },
+                ready: { then(fn) { fn(); } } },
             localStorage: {
-                getItem: key => map.get(key) ?? null,
-                setItem: (key, value) => { if (fail) throw Error('QuotaExceededError'); map.set(key, value); },
+                getItem: key => map.get(logicalKey(key)) ?? null,
+                setItem: (key, value) => { if (fail) throw Error('QuotaExceededError'); map.set(logicalKey(key), value); },
                 removeItem: () => { throw Error('Remoção física não permitida neste teste'); }
             },
             navigator: { locks }, crypto, TextEncoder: require('node:util').TextEncoder,
@@ -130,7 +136,7 @@ async function main() {
     await vm.runInContext('finalizarJornada()', page.context);
     assert.equal(messages.filter(message => /outra aba/.test(message)).length, 0, 'operações locais não geram aviso falso');
     await app.tab().store.change(d => { d.jornadaAtiva = { truck: 'OUTRA-ABA', id: 'EXTERNA' }; });
-    page.context.window.dispatchEvent({ type: 'storage', key: 'trailerLogEstadoV2' });
+    page.context.window.dispatchEvent({ type: 'storage', key: prefix + 'trailerLogEstadoV2' });
     assert.match(elements.saida.textContent, /OUTRA-ABA/, 'eventos de outra aba atualizam o estado sem aviso desnecessário');
     await page.store.change(d => { d.jornadaAtiva = null; });
     assert.equal(page.store.read().data.trailersSalvos.length, 2);

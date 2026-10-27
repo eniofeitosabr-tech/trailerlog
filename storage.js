@@ -3,10 +3,15 @@
 const TrailerStorage = (() => {
     const keys = ["trailersSalvos", "trucksCadastrados", "jornadaAtiva", "jornadasSalvas"];
     const stateKey = "trailerLogEstadoV2";
-    const accountScope = () => typeof TrailerAuth === "undefined" ? "guest" : TrailerAuth.scope();
+    const accountScope = () => {
+        if (typeof TrailerAuth === "undefined") throw Error("Autenticação obrigatória para acessar os registros.");
+        const owner = TrailerAuth.scope();
+        if (typeof owner !== "string" || !/^[a-f0-9-]{36}$/i.test(owner)) throw Error("Conta autenticada inválida.");
+        return owner;
+    };
     const physicalKey = name => {
         const scope = accountScope();
-        return scope === "guest" ? name : "trailerlog:user:" + scope + ":" + name;
+        return "trailerlog:user:" + scope + ":" + name;
     };
     const get = name => localStorage.getItem(physicalKey(name));
     const clone = value => JSON.parse(JSON.stringify(value));
@@ -114,8 +119,11 @@ const TrailerStorage = (() => {
         notify(false);
     }
     async function change(update, expectedToken) {
+        const owner = accountScope();
+        await TrailerAuth.authorize(owner);
         checkLocks();
-        return navigator.locks.request("trailer-log-registros:" + accountScope(), async () => {
+        return navigator.locks.request("trailer-log-registros:" + owner, async () => {
+            if (accountScope() !== owner) throw Error("A conta mudou. Nenhum registro foi alterado.");
             const current = read();
             if (expectedToken !== undefined && current.token !== expectedToken) throw Error("Os registros mudaram em outra aba. Confira os dados e tente novamente.");
             const data = clone(current.data);
@@ -146,8 +154,11 @@ const TrailerStorage = (() => {
                 current.conflict ? "As diferenças não exigem alterar registros: o conteúdo é equivalente à cópia original ou ao estado atual. É possível atualizar somente os resumos de integridade, preservando todas as cópias." : "Não há conflito entre versões." };
     }
     async function recover(token) {
+        const owner = accountScope();
+        await TrailerAuth.authorize(owner);
         checkLocks();
-        return navigator.locks.request("trailer-log-registros:" + accountScope(), () => {
+        return navigator.locks.request("trailer-log-registros:" + owner, () => {
+            if (accountScope() !== owner) throw Error("A conta mudou. Nenhum registro foi alterado.");
             const current = inspect();
             if (current.token !== token) throw Error("Os dados mudaram desde a verificação. Verifique a recuperação novamente.");
             const plan = planRecovery();
@@ -164,9 +175,19 @@ const TrailerStorage = (() => {
     }
     function subscribe(update, onError) {
         let token, dataToken, lastError;
-        let authReady = typeof TrailerAuth === "undefined" || !TrailerAuth.configured;
+        let authReady = false;
         function refresh(event) {
             if (!authReady) return;
+            // Auth recebe foco/visibilidade antes deste assinante e pode iniciar
+            // uma verificação. Aguardar traileraccountready sem ler nem invalidar
+            // o snapshot; scope() continua bloqueando chamadas diretas nesse intervalo.
+            if (typeof TrailerAuth === "undefined" || TrailerAuth.verificationPending) return;
+            try { TrailerAuth.scope(); } catch (_) {
+                // Falhas de autenticação são apresentadas pelo gate de Auth;
+                // não são falhas de leitura/parse dos registros locais.
+                if (TrailerAuth.error && window.TrailerStartup) window.TrailerStartup.fail();
+                return;
+            }
             try {
                 const current = read();
                 lastError = undefined;
@@ -196,8 +217,10 @@ const TrailerStorage = (() => {
             if (document.visibilityState !== "hidden") refresh();
         });
         // Uma leitura inicial também permite detectar mudanças ocorridas com a aba suspensa.
-        if (typeof TrailerAuth !== "undefined" && TrailerAuth.configured) {
+        if (typeof TrailerAuth !== "undefined") {
             TrailerAuth.ready.then(() => {
+                // A primeira Promise pode resolver enquanto outra verificação já
+                // começou. Registrar a prontidão para retomar no próximo evento.
                 authReady = true;
                 refresh({ external: false, type: "trailerlogchange" });
             });
