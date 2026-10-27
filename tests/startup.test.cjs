@@ -14,7 +14,7 @@ function harness({ stalled = false, session = null, stalledUser = false, broken 
         if (!nodes.has(id)) nodes.set(id, { hidden: id !== 'appCarregando', textContent: '' });
         return nodes.get(id);
     };
-    const context = vm.createContext({ URL, console,
+    const context = vm.createContext({ URL, URLSearchParams, console,
         crypto: require('node:crypto'), TextEncoder: require('node:util').TextEncoder,
         localStorage: { getItem: () => null },
         Event: class { constructor(type) { this.type = type; } },
@@ -22,7 +22,7 @@ function harness({ stalled = false, session = null, stalledUser = false, broken 
         clearTimeout(id) { timers.delete(id); },
         document: { getElementById: node, querySelector: () => node('app'),
             documentElement: { lang: 'pt-BR' }, addEventListener() {} },
-        window: { isSecureContext: true, TRAILER_SUPABASE_CONFIG: {
+        window: { location: { href: 'https://fixture.example/trailerlog/index.html' }, isSecureContext: true, TRAILER_SUPABASE_CONFIG: {
             url: 'https://fixture.supabase.co', publishableKey: 'sb_publishable_fixture'
         }, dispatchEvent(event) { for (const fn of events[event.type] || []) fn(event); },
         addEventListener(name, fn) { (events[name] ??= []).push(fn); },

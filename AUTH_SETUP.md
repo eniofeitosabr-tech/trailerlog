@@ -24,8 +24,30 @@ O aplicativo e seus dados locais continuam funcionando normalmente.
 7. Testar cadastro, confirmação, recuperação (inclusive link expirado), login,
    logout e troca de conta entre abas no Chrome/Android/Safari reais.
 
-O SDK 2.118.0 é carregado do jsDelivr somente após configuração pública válida.
-Para publicação, avaliar hospedagem local do bundle verificado e uma CSP adequada.
+O SDK 2.118.0 é carregado de `vendor/supabase-js/supabase-2.118.0.js`, com SRI,
+somente após configuração pública válida. O pacote foi conferido com o hash
+`dist.integrity` do npm oficial; o bundle corresponde byte a byte ao jsDelivr.
+Origem, versão, licença MIT e hashes estão em `vendor/supabase-js/provenance.json`.
+A regra -text em .gitattributes preserva os bytes do bundle entre Windows e Linux.
+Não há fallback para CDN. Atualizações exigem repetir a verificação, atualizar
+o bundle, o manifesto e o SRI de auth.js, e executar os testes de segurança.
+As quatro páginas de conta usam CSP sem scripts inline, com `form-action 'none'`
+e conexões somente ao projeto configurado. Ao trocar de projeto, atualizar também
+`connect-src` nessas páginas. Os controles começam desabilitados no HTML e só são
+liberados após instalação dos handlers e inicialização da autenticação.
+Recuperação: o template de e-mail deve usar `{{ .ConfirmationURL }}` e o destino
+exato `https://eniofeitosabr-tech.github.io/trailerlog/nova-senha.html` deve estar
+em Redirect URLs. O aplicativo envia esse destino em `redirectTo`; links enviados
+pelo painel podem usar a Site URL. Links com `type=recovery` que chegarem a outra
+página são encaminhados para nova-senha.html antes de consumir a sessão.
+O fluxo usa o retorno implicit padrão do SDK, valida PASSWORD_RECOVERY e getUser,
+mantém a sessão de recuperação somente em memória, com chave separada, e a encerra
+antes de voltar ao login. Recarregar/fechar a página após consumir o link exige
+solicitar outro e-mail. Links customizados com token_hash/PKCE não são aceitos por
+este fluxo. Não copiar tokens para logs, tickets ou arquivos de teste.
+As páginas principais ainda têm scripts inline legados; a CSP estrita acima está
+limitada às páginas de conta. Tokens de sessões normais permanecem no armazenamento
+gerenciado pelo SDK e precisam continuar protegidos contra scripts da mesma origem.
 As senhas passam somente aos métodos do Auth; não são persistidas pelo código
 do aplicativo. O SDK gerencia seus tokens na chave separada trailerlog-auth-session.
 Não incluir tokens/sessões em backups nem em logs.

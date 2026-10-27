@@ -26,7 +26,7 @@ function harness({ configured = false, userId = null, map = new Map(), mode = 'l
     };
     for (const method of ['signInWithPassword', 'signUp', 'resetPasswordForEmail', 'updateUser', 'signOut']) auth[method] = async (...args) => { calls.push({ method, args }); return result; };
     const config = configured ? { url: 'https://fixture.supabase.co', publishableKey: key || 'sb_publishable_fixture' } : {};
-    const context = vm.createContext({ console, URL, crypto, TextEncoder: require('node:util').TextEncoder,
+    const context = vm.createContext({ console, URL, URLSearchParams, crypto, TextEncoder: require('node:util').TextEncoder,
         setTimeout, clearTimeout, Event: class { constructor(type) { this.type = type; } },
         navigator: { locks: { request: async (name, cb) => cb() } },
         window: { TRAILER_SUPABASE_CONFIG: config, isSecureContext: true, location: { href: 'https://fixture.example/app/login.html' },
@@ -55,6 +55,8 @@ async function main() {
     assert.equal(guest.requests.length, 0, 'sem configuração não há SDK nem rede');
     assert.equal(guest.run('TrailerStorage.read().data.trailersSalvos[0].trailer'), 'LEGADO');
     const a = harness({ configured: true, userId: A, map }); await a.run('TrailerAuth.ready');
+    await assert.rejects(a.run('TrailerAuth.updatePassword("FICTICIO-apenas-teste")'), /Link de recuperação/);
+    assert(!a.calls.some(call => call.method === 'updateUser'), 'login normal não autoriza o formulário de recuperação');
     assert.equal(a.run('TrailerStorage.read().data.trailersSalvos.length'), 0, 'login não importa legado');
     await a.run('TrailerStorage.change(d => d.trailersSalvos.push({trailer:"CONTA-A"}))');
     assert(map.has('trailerlog:user:' + A + ':trailerLogEstadoV2'));
@@ -75,9 +77,9 @@ async function main() {
     assert.equal(invalid.requests.length, 0);
     assert.throws(() => invalid.run('TrailerStorage.read()'), /Conta indisponível/);
     // Os formulários chamam somente Auth; nenhuma tabela/registro é enviado.
-    for (const [mode, method] of [['login', 'signInWithPassword'], ['signup', 'signUp'], ['recovery', 'resetPasswordForEmail'], ['password', 'updateUser']]) {
+    for (const [mode, method] of [['login', 'signInWithPassword'], ['signup', 'signUp'], ['recovery', 'resetPasswordForEmail']]) {
         const page = harness({ configured: true, mode }); await page.run('TrailerAuth.ready');
-        vm.runInContext(source('auth-page.js'), page.context);
+        vm.runInContext(source('auth-page.js'), page.context); await page.run("AuthPage.ready");
         page.get('email').value = 'fixture@example.invalid';
         page.get('password').value = 'FICTICIO-apenas-teste';
         page.get('confirmPassword').value = 'FICTICIO-apenas-teste';
@@ -89,7 +91,7 @@ async function main() {
         if (mode === 'recovery') assert.equal(page.calls[0].args[1].redirectTo, 'https://fixture.example/app/nova-senha.html');
     }
     const ui = harness({ configured: true, mode: 'signup' }); await ui.run('TrailerAuth.ready');
-    vm.runInContext(source('auth-page.js'), ui.context);
+    vm.runInContext(source('auth-page.js'), ui.context); await ui.run("AuthPage.ready");
     ui.get('password').value = 'a'; ui.get('confirmPassword').value = 'b';
     await ui.run('AuthPage.submit({preventDefault(){}})'); assert.equal(ui.calls.length, 0);
     assert.match(ui.get('authStatus').textContent, /8 caracteres/);
@@ -105,7 +107,7 @@ async function main() {
     ui.get('themeAuth').click();
     assert.equal(ui.map.get('trailerlog-theme'), 'light');
     const login = harness({ configured: true }); await login.run('TrailerAuth.ready');
-    vm.runInContext(source('auth-page.js'), login.context);
+    vm.runInContext(source('auth-page.js'), login.context); await login.run("AuthPage.ready");
     login.result({ error: { code: 'invalid_credentials' } });
     await login.run('AuthPage.submit({preventDefault(){}})');
     assert.match(login.get('authStatus').textContent, /inválidos/);
@@ -134,7 +136,9 @@ async function main() {
         assert(html.indexOf('supabase-config.js') < html.indexOf('auth.js'));
         assert(html.indexOf('auth.js') < html.indexOf('auth-page.js'));
         assert(html.includes('type="submit"'));
-        assert(html.includes('method="post" onsubmit="return false"'));
+        assert(html.includes('method="post"'));
+        assert(html.includes("form-action 'none'"));
+        assert(!html.includes('onsubmit='));
     }
     for (const page of ['index.html', 'historico.html', 'configuracoes.html']) {
         const html = source(page);

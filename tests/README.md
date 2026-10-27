@@ -1,5 +1,21 @@
 # Testes de consistência
 
+Execute `node tests/security.test.cjs` para validar CSP, formulários desabilitados
+sem JavaScript, mensagens noscript, identificação e integridade do SDK local.
+
+Para testes reais no navegador, inicie Chrome/Edge headless com perfil temporário
+isolado e `--remote-debugging-port=9229`, sem usar seu perfil pessoal. Execute
+`node tests/browser-security.test.cjs` e encerre o navegador ao terminar.
+O teste serve o projeto somente em localhost, usa contextos descartáveis e
+intercepta toda rede externa. Verifica quatro páginas com JavaScript desabilitado,
+POST nativo bloqueado pela CSP, SRI, adulteração do bundle, handlers ausentes,
+login com resposta fictícia e larguras 320/1280. Nunca usa contas ou senhas reais.
+
+Execute também `node tests/recovery.test.cjs` para recuperação de senha: destino
+explícito, inscrição inicial do evento, validação, isolamento da sessão, links
+inválidos/expirados, timeout, logout e retorno ao login. SDK e DOM são simulados;
+nenhum e-mail, senha ou pedido é enviado ao Supabase.
+
 Execute `node tests/storage.test.cjs` com Node.js. Os testes usam `Map` e contextos
 JavaScript isolados para representar abas. Não abrem o navegador nem acessam seu
 localStorage. Incluem as funções dos botões de jornada, histórico e backup.

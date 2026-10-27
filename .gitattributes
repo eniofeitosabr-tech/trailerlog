@@ -1,0 +1,2 @@
+# Preservar os bytes do bundle verificado: conversão CRLF/LF invalida o SRI.
+vendor/supabase-js/*.js -text
