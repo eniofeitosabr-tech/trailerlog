@@ -205,20 +205,6 @@
         /* ADAPTAÇÃO PARA CELULAR */
 
         @media (max-width: 768px) {
-            .app-layout {
-                flex-direction: column;
-            }
-
-            .menu-lateral {
-                width: 100%;
-                min-width: 0;
-                min-height: auto;
-            }
-
-            .conteudo-principal {
-                padding: 12px;
-            }
-
             .painel-configuracoes {
                 padding: 18px;
             }
@@ -312,6 +298,18 @@
             <div class="secao-config">
 
                 <h2>Gerenciamento de Dados</h2>
+
+                <div class="cartao-backup">
+                    <h3>Cópia de segurança</h3>
+                    <p>Guarde seus caminhões, trailers e jornadas em um arquivo JSON no computador.</p>
+                    <p>A restauração substitui os registros deste navegador pelos dados do arquivo, incluindo a jornada ativa. Exporte um backup atual antes de continuar e feche outras abas do Trailer Log.</p>
+                    <div class="backup-acoes">
+                        <button type="button" onclick="exportarBackup()">Exportar Backup</button>
+                        <button type="button" onclick="document.getElementById('arquivoBackup').click()">Restaurar Backup</button>
+                    </div>
+                    <input type="file" id="arquivoBackup" accept=".json,application/json" hidden onchange="restaurarBackup(this)">
+                    <p id="statusBackup" role="status" aria-live="polite"></p>
+                </div>
 
                 <div class="cartao-limpeza">
 
@@ -440,6 +438,7 @@
 </div>
 
 
+<script src="backup.js"></script>
 <script>
 
 // ==================================

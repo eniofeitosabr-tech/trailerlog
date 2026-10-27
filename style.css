@@ -966,6 +966,16 @@ body.dark-mode .sobre-painel .sobre-desenvolvedor { background: #142b49; border-
 @media (max-width: 768px) {
     .sobre-painel { padding: 20px; }
     .sobre-painel h1 { font-size: 25px; }
+    /* Com display: contents no main, o painel participa da ordem do app-layout. */
+    .sobre-painel {
+        order: 3;
+        box-sizing: border-box;
+        width: calc(100% - 24px);
+        max-width: calc(100% - 24px);
+        min-width: 0;
+        margin: 12px;
+        overflow-wrap: anywhere;
+    }
 }
 
 
@@ -1367,4 +1377,68 @@ body.dark-mode .sobre-painel .sobre-desenvolvedor { background: #142b49; border-
     color: #888;
     text-align: center;
     margin-top: 5px;
+}
+
+/* Backup: mantém os cartões, cores e botões das configurações. */
+.cartao-backup {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+.cartao-backup h3 { color: #174ea6; margin-top: 0; }
+.cartao-backup p { line-height: 1.6; overflow-wrap: anywhere; }
+.backup-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.backup-acoes button { margin: 0; }
+#statusBackup:empty { display: none; }
+body.dark-mode .cartao-backup { background: #142b49; border-color: #28558a; }
+body.dark-mode .cartao-backup h3 { color: #93c5fd; }
+@media (max-width: 768px) {
+    .cartao-backup { padding: 18px; }
+    .backup-acoes button { width: 100%; }
+}
+
+/* Mesmas margens do Registrar, somente nos painéis secundários mobile. */
+@media (max-width: 768px) {
+    .historico-painel,
+    .painel-configuracoes {
+        box-sizing: border-box;
+        width: calc(100% - 24px);
+        max-width: calc(100% - 24px);
+        margin: 12px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .historico-painel *,
+    .painel-configuracoes *,
+    .modal-confirmacao * {
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    .historico-painel .abas-historico {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .painel-configuracoes .cartao-limpeza {
+        padding: 18px;
+    }
+
+    .painel-configuracoes .backup-acoes,
+    .painel-configuracoes .btn-limpar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .painel-configuracoes .btn-limpar {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .historico-painel .historico-acoes a {
+        max-width: 100%;
+        text-align: center;
+    }
 }
