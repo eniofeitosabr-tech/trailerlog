@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trailer Log - Sobre</title>
   <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
 </head>
 <body>
+<section id="contaBloqueada" class="conta-bloqueada" role="alert" hidden><h2>Conta / Account</h2><p>Verificando a sessão ou sessão alterada. Seus registros estão preservados. Ao reabrir, rascunhos desta página não serão mantidos.<br>Checking session or session changed. Your records are preserved. Reopening will discard this page’s unsaved draft.</p><a href="login.html">Conferir conta / Review account</a><button type="button" onclick="location.reload()">Reabrir aplicativo / Reopen app</button></section>
   <div class="app-layout">
     <aside class="menu-lateral">
       <div class="logo-menu"><h2>🚛 Trailer Log</h2><p>Controle de Frota</p></div>
@@ -16,7 +18,9 @@
         <a href="historico.html">📊 Relatórios</a>
         <a href="configuracoes.html">⚙️ Configurações</a>
         <a href="sobre.html" class="menu-ativo" aria-current="page">ℹ️ Sobre</a>
-      </nav>
+      <a href="login.html">👤 Conta / Account</a>
+</nav>
+<p id="contaStatus" class="conta-sessao" role="status"></p>
     </aside>
     <main class="conteudo-principal">
       <section class="topo-app"><div class="faixa-caminhao"><div class="overlay-topo"><h1>Trailer Log</h1><p>Controle de trucks e trailers</p></div></div></section>
@@ -37,5 +41,6 @@
       <footer class="rodape-creditos">Trailer Log · Desenvolvido por <strong>Enio Feitosa</strong> · © 2026</footer>
     </main>
   </div>
+<script src="supabase-config.js"></script><script src="auth.js"></script>
 </body>
 </html>

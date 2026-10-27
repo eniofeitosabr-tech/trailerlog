@@ -1,0 +1,22 @@
+/* Componentes de conta isolados: não substituem o layout aprovado do aplicativo. */
+.app-layout[hidden], .conta-bloqueada[hidden], .auth-card [hidden] { display: none; }
+.conta-sessao { color: #cbd5e1; font-size: 12px; overflow-wrap: anywhere; padding: 0 12px; }
+.conta-bloqueada { max-width: 650px; margin: 24px auto; padding: 24px; }
+.auth-shell { box-sizing: border-box; width: 100%; max-width: 480px; margin: 32px auto; padding: 0 12px; }
+.auth-card { box-sizing: border-box; width: 100%; padding: 28px; background: #fff; border: 1px solid #cbd5e1; border-radius: 16px; box-shadow: 0 4px 20px #0001; overflow-wrap: anywhere; }
+.auth-card h1 { margin-top: 0; }
+.auth-card p { line-height: 1.6; }
+.auth-card label { display: block; margin-top: 14px; }
+.auth-card input, .auth-card select, .auth-card button { box-sizing: border-box; max-width: 100%; min-width: 0; }
+.auth-card input { display: block; width: 100%; min-height: 44px; }
+.auth-card button { margin: 12px 0 0; white-space: normal; }
+.auth-card button[type=submit] { width: 100%; }
+.auth-card button:disabled { opacity: .65; cursor: wait; }
+.auth-card a { color: #174ea6; }
+.auth-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+.auth-tools label { margin: 0; }
+.auth-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+#authStatus { min-height: 24px; }
+body.dark-mode .auth-card { background: #0f172a; border-color: #334155; }
+body.dark-mode .auth-card a { color: #93c5fd; }
+@media (max-width: 768px) { .auth-shell { margin: 12px auto; } .auth-card { padding: 20px; } }

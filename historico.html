@@ -326,11 +326,31 @@
 
         }
     </style>
+<link rel="stylesheet" href="auth.css">
+    <!-- O estado inicial independe do download de CSS/JS. -->
+    <style>
+        .app-layout[hidden], #appCarregando[hidden], #appFalhou[hidden], #contaBloqueada[hidden] { display: none !important; }
+        .app-inicializacao { min-height: 100vh; display: grid; place-content: center; padding: 24px; box-sizing: border-box; text-align: center; font-family: Arial, sans-serif; background: #f8fafc; color: #334155; }
+    </style>
+    <script data-startup-watchdog>
+        window.trailerStartupTimer = setTimeout(function () {
+            window.trailerStartupExpired = true;
+            if (window.TrailerStartup) return window.TrailerStartup.fail();
+            document.querySelector('.app-layout').hidden = true;
+            document.getElementById('appCarregando').hidden = true;
+            document.getElementById('appFalhou').hidden = false;
+        }, 20000);
+    </script>
+    <noscript><style>#appCarregando { display: none !important; }</style></noscript>
 </head>
 
 <body>
+<section id="appCarregando" class="app-inicializacao" role="status" aria-live="polite"><p>Carregando Trailer Log...</p></section>
+<section id="appFalhou" class="app-inicializacao" role="alert" hidden><h2>Não foi possível carregar o Trailer Log</h2><p>Verifique sua conexão e tente novamente. Seus registros foram preservados.</p><button type="button" onclick="location.reload()">Tentar novamente</button><a href="login.html">Conferir conta</a></section>
+<noscript><section class="app-inicializacao"><h2>Ative o JavaScript</h2><p>O Trailer Log precisa de JavaScript para verificar sua conta e carregar seus registros com segurança.</p><p>Após ativá-lo, recarregue esta página.</p></section></noscript>
+<section id="contaBloqueada" class="conta-bloqueada" role="alert" hidden><h2>Conta / Account</h2><p>Sua sessão foi alterada. Confira sua conta antes de continuar. Seus registros estão preservados. Ao reabrir, rascunhos desta página não serão mantidos.<br>Your session changed. Review your account before continuing. Your records are preserved. Reopening will discard this page’s unsaved draft.</p><a href="login.html">Conferir conta / Review account</a><button type="button" onclick="location.reload()">Reabrir aplicativo / Reopen app</button></section>
 
-<div class="app-layout">
+<div class="app-layout" hidden>
 
     <!-- MENU LATERAL -->
 
@@ -359,7 +379,9 @@
             </a>
 
             <a href="sobre.html">ℹ️ Sobre</a>
-        </nav>
+        <a href="login.html">👤 Conta / Account</a>
+</nav>
+<p id="contaStatus" class="conta-sessao" role="status"></p>
 
     </aside>
 
@@ -469,6 +491,9 @@
 
 </div>
 
+<script src="app-startup.js"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
 <script src="sha256.js"></script>
 <script src="storage.js"></script>
 <script>

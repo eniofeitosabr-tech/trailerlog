@@ -2,7 +2,13 @@
  * Web Locks serializa operações entre abas. Sem esse recurso, gravar é bloqueado. */
 const TrailerStorage = (() => {
     const keys = ["trailersSalvos", "trucksCadastrados", "jornadaAtiva", "jornadasSalvas"];
-    const key = "trailerLogEstadoV2";
+    const stateKey = "trailerLogEstadoV2";
+    const accountScope = () => typeof TrailerAuth === "undefined" ? "guest" : TrailerAuth.scope();
+    const physicalKey = name => {
+        const scope = accountScope();
+        return scope === "guest" ? name : "trailerlog:user:" + scope + ":" + name;
+    };
+    const get = name => localStorage.getItem(physicalKey(name));
     const clone = value => JSON.parse(JSON.stringify(value));
     const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
     const compatibility = "Use Chrome ou Safari atualizados. No computador, abra por HTTPS ou localhost; no celular, use HTTPS com certificado válido (HTTP pelo IP da rede não basta).";
@@ -57,8 +63,8 @@ const TrailerStorage = (() => {
     }
     function inspect() {
         try {
-            const legacy = Object.fromEntries(keys.map(name => [name, localStorage.getItem(name)]));
-            const raw = localStorage.getItem(key);
+            const legacy = Object.fromEntries(keys.map(name => [name, get(name)]));
+            const raw = get(stateKey);
             let data, baseline, revision = 0;
             const signatures = Object.fromEntries(keys.map(name => [name, signature(legacy[name], name)]));
             if (raw !== null) {
@@ -81,7 +87,7 @@ const TrailerStorage = (() => {
             data = clone(data);
             identify(data);
             validate(data);
-            return { data, storedData, token: trailerSha256(JSON.stringify([raw, legacy])), legacy, baseline, signatures, revision,
+            return { data, storedData, token: trailerSha256(JSON.stringify([accountScope(), raw, legacy])), legacy, baseline, signatures, revision,
                 conflict: keys.some(name => baseline[name].raw !== signatures[name].raw) };
         } catch (error) {
             throw Error("Não foi possível ler os registros: " + error.message);
@@ -103,13 +109,13 @@ const TrailerStorage = (() => {
     function save(current, data) {
         const raw = JSON.stringify({ version: 3, revision: current.revision + 1, legacy: current.signatures, data });
         if (inspect().token !== current.token) throw Error("Conflito entre abas. Nenhuma alteração foi gravada.");
-        try { localStorage.setItem(key, raw); }
+        try { localStorage.setItem(physicalKey(stateKey), raw); }
         catch (error) { throw Error("Não foi possível salvar os registros. O estado anterior foi preservado. " + error.message); }
         notify(false);
     }
     async function change(update, expectedToken) {
         checkLocks();
-        return navigator.locks.request("trailer-log-registros", async () => {
+        return navigator.locks.request("trailer-log-registros:" + accountScope(), async () => {
             const current = read();
             if (expectedToken !== undefined && current.token !== expectedToken) throw Error("Os registros mudaram em outra aba. Confira os dados e tente novamente.");
             const data = clone(current.data);
@@ -126,7 +132,9 @@ const TrailerStorage = (() => {
         return crypto.randomUUID();
     }
     window.addEventListener("storage", event => {
-        if (event.key === null || event.key === key || keys.includes(event.key)) notify(true);
+        try {
+            if (event.key === null || [stateKey, ...keys].some(name => event.key === physicalKey(name))) notify(true);
+        } catch (_) { notify(true); }
     });
     function planRecovery() {
         const current = inspect();
@@ -139,7 +147,7 @@ const TrailerStorage = (() => {
     }
     async function recover(token) {
         checkLocks();
-        return navigator.locks.request("trailer-log-registros", () => {
+        return navigator.locks.request("trailer-log-registros:" + accountScope(), () => {
             const current = inspect();
             if (current.token !== token) throw Error("Os dados mudaram desde a verificação. Verifique a recuperação novamente.");
             const plan = planRecovery();
@@ -152,11 +160,13 @@ const TrailerStorage = (() => {
         // Não exige parse: permite salvar também JSON corrompido para recuperação manual.
         return { aplicativo: "Trailer Log", tipo: "recuperacao", versaoRecuperacao: 1, exportadoEm: new Date().toISOString(),
             aviso: "Arquivo de diagnóstico com todas as cópias brutas. Não é um backup comum e não deve ser restaurado diretamente.",
-            estadoAtualBruto: localStorage.getItem(key), legadoBruto: Object.fromEntries(keys.map(name => [name, localStorage.getItem(name)])) };
+            estadoAtualBruto: get(stateKey), legadoBruto: Object.fromEntries(keys.map(name => [name, get(name)])) };
     }
     function subscribe(update, onError) {
         let token, dataToken, lastError;
+        let authReady = typeof TrailerAuth === "undefined" || !TrailerAuth.configured;
         function refresh(event) {
+            if (!authReady) return;
             try {
                 const current = read();
                 lastError = undefined;
@@ -166,23 +176,32 @@ const TrailerStorage = (() => {
                 const dataChanged = nextDataToken !== dataToken;
                 dataToken = nextDataToken;
                 update(current, event && event.type === "trailerlogchange" ? !!event.external : true, dataChanged);
+                if (window.TrailerStartup) window.TrailerStartup.dataReady();
             } catch (error) {
                 // Uma cópia reparada pode voltar ao mesmo token anterior ao erro.
                 token = undefined;
                 dataToken = undefined;
                 if (lastError !== error.message) {
                     lastError = error.message;
-                    onError(error);
+                    if (window.TrailerStartup && window.TrailerStartup.pending) window.TrailerStartup.fail();
+                    else onError(error);
                 }
             }
         }
         window.addEventListener("trailerlogchange", refresh);
+        window.addEventListener("traileraccountready", refresh);
+        window.addEventListener("traileraccountchange", refresh);
         window.addEventListener("focus", refresh);
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState !== "hidden") refresh();
         });
         // Uma leitura inicial também permite detectar mudanças ocorridas com a aba suspensa.
-        refresh({ external: false, type: "trailerlogchange" });
+        if (typeof TrailerAuth !== "undefined" && TrailerAuth.configured) {
+            TrailerAuth.ready.then(() => {
+                authReady = true;
+                refresh({ external: false, type: "trailerlogchange" });
+            });
+        } else refresh({ external: false, type: "trailerlogchange" });
     }
     return { read, change, id, keys, validate, planRecovery, recover, recoveryArchive, subscribe };
 })();
