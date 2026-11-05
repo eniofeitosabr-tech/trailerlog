@@ -51,6 +51,7 @@ const TrailerStorage = (() => {
                 }
             }
         }
+        if (typeof TrailerPay !== "undefined") TrailerPay.validateData(data);
     }
     function identify(data) {
         for (const name of keys) {
@@ -99,6 +100,7 @@ const TrailerStorage = (() => {
         }
     }
     function read() {
+        if (typeof window !== 'undefined' && window.TrailerDailyWorkspace) return window.TrailerDailyWorkspace.read();
         const current = inspect();
         if (current.conflict) throw Error("Uma aba antiga alterou os registros. Feche as abas antigas e abra Configurações → Recuperação entre versões. Nenhuma cópia será descartada automaticamente.");
         return current;
@@ -119,6 +121,7 @@ const TrailerStorage = (() => {
         notify(false);
     }
     async function change(update, expectedToken) {
+        if (typeof window !== 'undefined' && window.TrailerDailyWorkspace) return window.TrailerDailyWorkspace.change(update, expectedToken);
         const owner = accountScope();
         await TrailerAuth.authorize(owner);
         checkLocks();
@@ -226,5 +229,5 @@ const TrailerStorage = (() => {
             });
         } else refresh({ external: false, type: "trailerlogchange" });
     }
-    return { read, change, id, keys, validate, planRecovery, recover, recoveryArchive, subscribe };
+    return { read, change, id, keys, validate, identify, planRecovery, recover, recoveryArchive, subscribe };
 })();

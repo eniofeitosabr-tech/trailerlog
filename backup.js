@@ -29,10 +29,11 @@ function validarDadosBackup(dados) {
         if (tipo === "trailersSalvos" && !texto(item.trailer)) throw new Error("Trailer sem número.");
         if (tipo === "trucksCadastrados" && !texto(item.numero)) throw new Error("Caminhão sem número.");
         if (tipo === "jornadasSalvas" || tipo === "jornadaAtiva") {
-            if (!texto(item.id) || !texto(item.truck) || !data(item.inicio)) {
-                throw new Error("Jornada sem identificação, caminhão ou início válido.");
+            if (!texto(item.id) || !texto(item.truck)) {
+                throw new Error("Jornada sem identificação ou caminhão válido.");
             }
-            if (item.fim && Date.parse(item.fim) < Date.parse(item.inicio)) {
+            // Older journeys may have no start date; retain that absence, as storage/reports do.
+            if (item.fim && item.inicio && Date.parse(item.fim) < Date.parse(item.inicio)) {
                 throw new Error("Jornada com término anterior ao início.");
             }
         }
@@ -87,9 +88,15 @@ function exportarBackup() {
 }
 
 async function aplicarDadosBackup(dados, token) {
+    if (typeof window !== 'undefined' && window.TrailerDailyWorkspace) throw Error('Restauração de dados antigos bloqueada no espaço de novos registros. / Restoring older data is blocked in the new-records workspace.');
     validarDadosBackup(dados);
     return TrailerStorage.change(atual => {
-        for (const chave of CHAVES_BACKUP) atual[chave] = JSON.parse(JSON.stringify(dados[chave]));
+        // Restore every exported data field, including historical/future metadata.
+        // Missing optional fields in old backups retain their current values (e.g. rates).
+        // Define own properties so JSON keys such as __proto__ never invoke a setter.
+        for (const chave of Object.keys(dados)) Object.defineProperty(atual, chave, {
+            value: JSON.parse(JSON.stringify(dados[chave])), enumerable: true, writable: true, configurable: true
+        });
     }, token);
 }
 
@@ -123,16 +130,19 @@ async function restaurarBackup(input) {
     try {
         const arquivo = input.files[0];
         if (!arquivo) return;
+        const conta = TrailerAuth.scope();
         restauracaoEmAndamento = true;
         input.disabled = true;
         const dados = lerArquivoBackup(await arquivo.text());
         if (atualizacaoBackupPendente) await new Promise(resolve => { liberarAtualizacaoBackup = resolve; });
+        if (TrailerAuth.scope() !== conta) throw new Error("A conta mudou. Selecione o backup novamente na conta desejada.");
         const resumo = `${dados.trucksCadastrados.length} caminhão(ões), ${dados.trailersSalvos.length} utilização(ões) de trailer, ${dados.jornadasSalvas.length} jornada(s) salva(s) e ${dados.jornadaAtiva ? "1 jornada ativa" : "nenhuma jornada ativa"}.`;
         const token = TrailerStorage.read().token;
         if (!confirm("Backup validado: " + resumo + "\n\nA restauração SUBSTITUI todos os registros atuais, incluindo a jornada ativa. Feche outras abas do Trailer Log antes de continuar.\n\nDeseja restaurar este backup?")) {
             informarBackup("Restauração cancelada. Nenhum dado foi alterado.");
             return;
         }
+        if (TrailerAuth.scope() !== conta) throw new Error("A conta mudou. Nenhum registro foi alterado.");
         await aplicarDadosBackup(dados, token);
         informarBackup("Backup restaurado com sucesso: " + resumo);
     } catch (erro) {

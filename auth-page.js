@@ -7,7 +7,8 @@ const AuthPage = (() => {
             unavailable: "Autenticação não configurada. O acesso aos registros está bloqueado.",
             busy: "Aguarde…", mismatch: "As senhas não coincidem.", weak: "Use uma senha com pelo menos 8 caracteres.",
             signed: "Login realizado. Abra o aplicativo para acessar o espaço local desta conta; a sincronização na nuvem ainda não está habilitada.",
-            created: "Se o cadastro puder ser concluído, você receberá as instruções por e-mail. Confira sua caixa de entrada e spam.",
+            created: "Enviamos um link de confirmação para seu e-mail. Confira a caixa de entrada e a pasta de spam.",
+            createdReady: "Conta criada. Entre com seu e-mail e senha; a confirmação não é necessária.", confirmed: "E-mail confirmado. Entre com seu e-mail e senha.", invalidConfirmation: "Link de confirmação inválido ou expirado. Tente entrar ou solicite um novo cadastro.",
             sent: "Se houver uma conta com esse e-mail, enviaremos instruções para recuperar a senha.",
             updated: "Senha atualizada. Entre novamente com sua nova senha.",
             recoveryReady: "Link validado. Defina sua nova senha.",
@@ -25,7 +26,8 @@ const AuthPage = (() => {
             unavailable: "Authentication is not configured. Access to records is blocked.",
             busy: "Please wait…", mismatch: "Passwords do not match.", weak: "Use a password with at least 8 characters.",
             signed: "Signed in. Open the app to access this account's local workspace; cloud sync is not enabled yet.",
-            created: "If registration can be completed, instructions will be sent by email. Check your inbox and spam folder.",
+            created: "A confirmation link has been sent to your email. Check your inbox and spam folder.",
+            createdReady: "Account created. Sign in with your email and password; confirmation is not required.", confirmed: "Email confirmed. Sign in with your email and password.", invalidConfirmation: "Invalid or expired confirmation link. Try signing in or request a new signup.",
             sent: "If an account exists for this email, we will send password reset instructions.",
             updated: "Password updated. Sign in again with your new password.",
             recoveryReady: "Link verified. Set your new password.",
@@ -55,6 +57,7 @@ const AuthPage = (() => {
         else if (statusKey) status(statusKey, statusError);
     }
     function errorKey(error) {
+        if (error && error.code === "confirmation_invalid") return "invalidConfirmation";
         if (error && error.code === "invalid_credentials") return "invalid";
         if (error && error.code === "email_not_confirmed") return "verify";
         if (error && /rate_limit/.test(error.code || "")) return "rate";
@@ -89,14 +92,14 @@ const AuthPage = (() => {
             const result = mode === "login" ? await TrailerAuth.login(email, password) : mode === "signup" ? await TrailerAuth.signup(email, password) : mode === "recovery" ? await TrailerAuth.reset(email) : await TrailerAuth.updatePassword(password);
             if (result.error) throw result.error;
             el("authForm").reset();
-            status({ login: "signed", signup: "created", recovery: "sent", password: "updated" }[mode]);
+            status({ login: "signed", signup: result.data && result.data.session ? "createdReady" : "created", recovery: "sent", password: "updated" }[mode]);
             el("openApp").hidden = mode !== "login";
         } catch (error) { status(mode === "password" && TrailerAuth.recoveryPasswordUpdated ? "finishRecovery" : errorKey(error), true); }
         finally { loading(false); }
     }
     try {
         language = localStorage.getItem("trailerlog-language") === "en" ? "en" : "pt";
-        if (localStorage.getItem("trailerlog-theme") === "dark") document.body.classList.add("dark-mode");
+
     } catch (_) { /* Preferências indisponíveis não bloqueiam o formulário. */ }
     translate(); el("language").value = language;
     el("language").addEventListener("change", event => {
@@ -105,8 +108,7 @@ const AuthPage = (() => {
         translate();
     });
     el("themeAuth").addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-        try { localStorage.setItem("trailerlog-theme", document.body.classList.contains("dark-mode") ? "dark" : "light"); } catch (_) {}
+        TrailerTheme.toggle();
     });
     el("authForm").addEventListener("submit", submit);
     el("retryAuth").addEventListener("click", () => window.location.reload());
@@ -126,6 +128,7 @@ const AuthPage = (() => {
         authReady = true;
         loading(false);
         if (TrailerAuth.error) status(errorKey(TrailerAuth.error), true);
+        else if (TrailerAuth.emailConfirmed) status("confirmed");
         else if (mode === "password") status(TrailerAuth.recoveryReady ? "recoveryReady" : "expired", !TrailerAuth.recoveryReady);
         else if (TrailerAuth.configured) { statusKey = null; el("authStatus").textContent = ""; }
     }).catch(() => { authReady = false; loading(false); status("configuration", true); });

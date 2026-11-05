@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8"><script src="theme.js"></script>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Trailer Log · Meus Pagamentos</title>
+    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css"><link rel="stylesheet" href="payments.css">
+    <!-- O estado inicial independe do download de CSS/JS. -->
+    <style>
+        .app-layout[hidden], #appCarregando[hidden], #appFalhou[hidden], #contaBloqueada[hidden] { display: none !important; }
+        .app-inicializacao { min-height: 100vh; display: grid; place-content: center; padding: 24px; box-sizing: border-box; text-align: center; font-family: Arial, sans-serif; background: #f8fafc; color: #334155; }
+    </style>
+    <script data-startup-watchdog>
+        window.trailerStartupTimer = setTimeout(function () {
+            window.trailerStartupExpired = true;
+            if (window.TrailerStartup) return window.TrailerStartup.fail();
+            document.querySelector('.app-layout').hidden = true;
+            document.getElementById('appCarregando').hidden = true;
+            document.getElementById('appFalhou').hidden = false;
+        }, 20000);
+    </script>
+    <noscript><style>#appCarregando { display: none !important; }</style></noscript>
+</head>
+
+<body data-requires-auth="true" data-payment-page="report"><script src="theme-body.js"></script>
+<section id="appCarregando" class="app-inicializacao" role="status" aria-live="polite"><p>Carregando Trailer Log...</p></section>
+<section id="appFalhou" class="app-inicializacao" role="alert" hidden><h2>Não foi possível carregar o Trailer Log</h2><p>Verifique sua conexão e tente novamente. Seus registros foram preservados.</p><button type="button" onclick="location.reload()">Tentar novamente</button><a href="login.html">Conferir conta</a></section>
+<noscript><section class="app-inicializacao"><h2>Ative o JavaScript</h2><p>O Trailer Log precisa de JavaScript para verificar sua conta e carregar seus registros com segurança.</p><p>Após ativá-lo, recarregue esta página.</p></section></noscript>
+<section id="contaBloqueada" class="conta-bloqueada" role="alert" hidden><h2>Conta / Account</h2><p>Sua sessão foi alterada. Confira sua conta antes de continuar. Seus registros estão preservados. Ao reabrir, rascunhos desta página não serão mantidos.<br>Your session changed. Review your account before continuing. Your records are preserved. Reopening will discard this page’s unsaved draft.</p><a href="login.html">Conferir conta / Review account</a><button type="button" onclick="location.reload()">Reabrir aplicativo / Reopen app</button></section>
+
+<div class="app-layout" hidden>
+
+    <!-- MENU LATERAL -->
+
+    <aside class="menu-lateral">
+
+        <div class="logo-menu">
+            <h2>🚛 Trailer Log</h2>
+            <p>Controle de Frota</p>
+        </div>
+
+        <nav>
+<a href="index.html" data-pay-i18n="navRegister">📝 Registrar</a>
+<a href="paycheck.html" data-pay-i18n="menu" class="menu-ativo" aria-current="page">💵 Meus Pagamentos</a>
+<a href="historico.html" data-pay-i18n="navHistory">🕘 Histórico</a>
+<a href="historico.html" data-pay-i18n="navReports">📊 Relatórios</a>
+<a href="configuracoes.html" data-pay-i18n="navSettings">⚙️ Configurações</a>
+<a href="sobre.html" data-pay-i18n="navAbout">ℹ️ Sobre</a>
+<p id="contaStatus" class="conta-sessao" role="status"></p>
+<a href="login.html" class="menu-last" data-auth-logout data-pay-i18n="navLogout">👤 Sair da conta</a>
+<button id="payTheme" class="botao-tema" type="button" aria-label="Alternar tema / Toggle theme"><span>🌙</span><span class="interruptor-tema"><span class="bolinha-tema"></span></span></button>
+</nav>
+
+
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+
+    <main class="conteudo-principal pay-page">
+        <header class="cabecalho-pagina"><h1 data-pay-i18n="title">Meus Pagamentos</h1></header>
+<p data-pay-i18n="disclaimer">Estimativa em US$, antes de impostos e descontos. Inclui jornadas ativas.</p>
+        <form id="payFilter" class="pay-card">
+            <div class="pay-grid">
+                <label><span data-pay-i18n="from">De</span><input id="payFrom" type="date"></label>
+                <label><span data-pay-i18n="to">Até</span><input id="payTo" type="date"></label>
+            </div>
+            <button type="submit" data-pay-i18n="filter">Exibir período</button>
+        </form>
+        <div class="pay-tools detailed-actions">
+            <button type="button" id="payDetailToggle" aria-expanded="false" aria-controls="payDetailed" disabled>Relatório Detalhado</button>
+            <button type="button" id="payPrint" disabled>Imprimir / Salvar PDF</button>
+        </div>
+        <section id="payDetailed" class="pay-detailed" aria-label="Relatório detalhado / Detailed report" hidden></section>
+        <section class="pay-card">
+            <h2 data-pay-i18n="estimate">Total bruto estimado</h2><p id="payTotal" class="pay-grand-total" aria-live="polite"></p>
+            <div id="payTotals"></div><p data-pay-i18n="allocation">O bônus diário fica na primeira jornada com pagamento naquela data.</p>
+        </section>
+        <p id="payStatus" role="status" aria-live="polite"></p>
+        <section id="payReport" aria-label="Jornadas / Journeys"></section>
+        <details class="pay-card">
+            <summary data-pay-i18n="settings">Tarifa para novas jornadas</summary>
+            <p data-pay-i18n="rateNote">A alteração vale para novas jornadas. Jornadas existentes preservam a tarifa registrada.</p>
+            <form id="payRateForm"><label><span data-pay-i18n="rate">Tarifa por milha (US$)</span><input type="number" inputmode="decimal" id="payRate" min="0.01" max="1000" step="0.01" value="0.65" required></label>
+                <button type="submit" id="paySaveRate" data-pay-i18n="saveRate">Salvar tarifa</button>
+            </form>
+            <form id="payDetentionRateForm"><label><span data-pay-i18n="detentionRate">Tarifa de detenção por hora (US$)</span><input type="number" inputmode="decimal" id="payDetentionRate" min="0.01" max="1000" step="0.01" value="15.00" required></label>
+                <button type="submit" id="paySaveDetentionRate" data-pay-i18n="saveRate">Salvar tarifa</button>
+            </form>
+            <p data-pay-i18n="detentionRateNote">A tarifa de detenção vale apenas para novos registros, inclusive na jornada ativa. Detenções anteriores preservam a tarifa histórica.</p>
+        </details>
+        <footer class="rodape-creditos"><div class="pay-tools pay-footer-language"><label><span data-pay-i18n="language">Idioma</span> <select data-pay-language><option value="pt">Português</option><option value="en">English</option></select></label></div></footer>
+    </main>
+</div>
+<script src="app-startup.js"></script><script src="supabase-config.js"></script><script src="auth.js"></script>
+<script src="sha256.js"></script><script src="payments.js"></script><script src="daily-sync.js"></script><script src="storage.js"></script>
+<p id="payPrintDenied" hidden>Não foi possível imprimir. Confira sua sessão e o período selecionado.</p>
+<script src="payments-ui.js"></script><script src="detention-ui.js"></script><script src="paycheck-page.js"></script><script src="detailed-report.js"></script>
+</body></html>

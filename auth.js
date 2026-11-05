@@ -14,7 +14,12 @@ const TrailerAuth = (() => {
     const passwordPage = /\/nova-senha\.html$/.test(entry.pathname);
     const recoveryLink = fragment.get("type") === "recovery" || entry.searchParams.get("type") === "recovery";
     const linkError = fragment.has("error") || entry.searchParams.has("error");
-    let recovering = passwordPage || recoveryLink || linkError;
+    const confirmation = !passwordPage && !recoveryLink && (fragment.get("type") || entry.searchParams.get("type")) === "signup";
+    const distinctLink = ["magiclink", "invite", "email_change"].includes(fragment.get("type") || entry.searchParams.get("type"));
+    const authCallback = !passwordPage && !recoveryLink && !distinctLink && (confirmation || linkError ||
+        ["access_token", "refresh_token", "code", "token_hash"].some(key => fragment.has(key) || entry.searchParams.has(key)));
+    let confirmed = false;
+    let recovering = passwordPage || recoveryLink || (linkError && !authCallback);
     let recoverySession = null, recoveryUser = null, recoveryValid = false, passwordUpdated = false;
     let recoveryBusy = false, recoveryRevoked = false;
     const invalidRecovery = () => Object.assign(Error("Link de recuperação inválido ou expirado."), { code: "recovery_invalid" });
@@ -34,7 +39,7 @@ const TrailerAuth = (() => {
     }
     function accessible() {
         return configured && initialized && user && !failure && !changed && !recovering && !checking
-            && !signingOut && !suspended && navigator.onLine !== false && expiresAt > Date.now() && !logoutPending();
+            && !signingOut && !suspended && (navigator.onLine !== false || config.dailySync === true) && expiresAt > Date.now() && !logoutPending();
     }
     function scope() {
         if (!accessible()) throw Error(text("Conta indisponível ou alterada. Abra Conta para conferir a sessão; seus dados foram preservados.", "Account unavailable or changed. Open Account to review your session; your data was preserved."));
@@ -55,7 +60,11 @@ const TrailerAuth = (() => {
     }
     function validateConfig() {
         const url = new URL(config.url);
-        if (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co") || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey || "")) {
+        let localKey = false;
+        if (config.localDevelopment === true && ['localhost', '127.0.0.1'].includes(new URL(window.location.href).hostname) && url.origin === 'http://127.0.0.1:55321') {
+            try { localKey = JSON.parse(atob(config.publishableKey.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).role === 'anon'; } catch (_) {}
+        }
+        if (!localKey && (url.protocol !== "https:" || !url.hostname.endsWith(".supabase.co") || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.publishableKey || ""))) {
             throw Error(text("Configure uma URL HTTPS do Supabase e a chave publicável sb_publishable_. Não use chaves secretas.", "Configure a Supabase HTTPS URL and sb_publishable_ key. Do not use secret keys."));
         }
         if (!window.isSecureContext) throw Error(text("Autenticação requer HTTPS ou localhost.", "Authentication requires HTTPS or localhost."));
@@ -114,11 +123,18 @@ const TrailerAuth = (() => {
     async function initialize() {
         if (!configured) {
             failure = recovering ? invalidRecovery() : Error("Autenticação não configurada. Não é possível abrir os registros.");
-            if (recovering) cleanRecoveryURL();
+            if (recovering || authCallback) cleanRecoveryURL();
             render();
             return;
         }
         try {
+            if (authCallback && !loginPage) {
+                const target = new URL("login.html", entry);
+                target.search = entry.search;
+                target.hash = entry.hash;
+                window.location.replace(target.href);
+                return;
+            }
             if (recovering && !passwordPage) {
                 // Destino fixo e mesma origem: encaminha antes de consumir os tokens.
                 const target = new URL("nova-senha.html", entry);
@@ -131,10 +147,31 @@ const TrailerAuth = (() => {
             validateConfig();
             await loadSDK();
             client = window.supabase.createClient(config.url, config.publishableKey, { auth: {
-                persistSession: !recovering, autoRefreshToken: !recovering, detectSessionInUrl: true,
+                persistSession: !recovering && !authCallback, autoRefreshToken: !recovering && !authCallback, detectSessionInUrl: !authCallback,
                 flowType: "implicit",
-                storageKey: recovering ? "trailerlog-password-recovery" : "trailerlog-auth-session"
+                storageKey: authCallback ? "trailerlog-email-confirmation" : recovering ? "trailerlog-password-recovery" : "trailerlog-auth-session"
             } });
+            if (authCallback) {
+                try {
+                    // Validate signup on the server before creating or ending an isolated session.
+                    if (!confirmation || linkError || !fragment.get("access_token") || !fragment.get("refresh_token"))
+                        throw Object.assign(Error("Invalid confirmation link"), { code: "confirmation_invalid" });
+                    const token = fragment.get("access_token");
+                    const verified = await bounded(client.auth.getUser(token));
+                    if (verified.error) throw verified.error;
+                    if (!verified.data.user || !verified.data.user.email_confirmed_at)
+                        throw Object.assign(Error("Email not confirmed"), { code: "confirmation_invalid" });
+                    const result = await bounded(client.auth.setSession({ access_token: token, refresh_token: fragment.get("refresh_token") }));
+                    if (result.error) throw result.error;
+                    if (!result.data.session || result.data.session.user.id !== verified.data.user.id)
+                        throw Object.assign(Error("Invalid confirmation session"), { code: "confirmation_invalid" });
+                    const ended = await bounded(client.auth.signOut({ scope: "local" }));
+                    if (ended.error) throw ended.error;
+                    confirmed = true;
+                    initialized = true;
+                } finally { cleanRecoveryURL(); }
+                return;
+            }
             let signalRecovery;
             const recoveryEvent = new Promise(resolve => { signalRecovery = resolve; });
             // Inscrever imediatamente, antes de aguardar qualquer operação do SDK.
@@ -190,11 +227,11 @@ const TrailerAuth = (() => {
                 scheduleValidation();
             }
         } catch (error) {
-            if (!recovering && invalidSession(error)) {
+            if (!recovering && !authCallback && invalidSession(error)) {
                 user = null; expiresAt = 0; initialized = true;
                 if (protectedPage) navigate("login.html");
             } else failure = error;
-            if (recovering) { recoveryValid = false; cleanRecoveryURL(); }
+            if (recovering || authCallback) { recoveryValid = false; cleanRecoveryURL(); }
         }
         finally { render(); event("traileraccountready"); }
     }
@@ -237,6 +274,9 @@ const TrailerAuth = (() => {
         if (validationTimer && typeof validationTimer.unref === "function") validationTimer.unref();
     }
     async function revalidate(hide = true) {
+        if (config.dailySync === true && navigator.onLine === false && user && !failure && !changed && !recovering && !signingOut && expiresAt > Date.now()) {
+            checking = false; render(); event('traileraccountready'); return;
+        }
         if (validation) {
             if (hide) { checking = true; render(); }
             return validation;
@@ -273,7 +313,20 @@ const TrailerAuth = (() => {
         return expected;
     }
     async function login(email, password) {
-        const auth = await api();
+        await api();
+        if (confirmed) {
+            // A manual password login uses normal persistence, never the callback client.
+            client = window.supabase.createClient(config.url, config.publishableKey, { auth: {
+                persistSession: true, autoRefreshToken: true, detectSessionInUrl: false,
+                flowType: "implicit", storageKey: "trailerlog-auth-session"
+            } });
+            client.auth.onAuthStateChange((name, session) => {
+                observedIdentity = session && session.user ? session.user.id : null;
+                if (initialized || name === "SIGNED_OUT") acceptSession(name, session);
+            });
+            confirmed = false;
+        }
+        const auth = client.auth;
         const result = await bounded(auth.signInWithPassword({ email, password }));
         if (result.error) return result;
         changed = false;
@@ -363,8 +416,15 @@ const TrailerAuth = (() => {
     }
     window.addEventListener("offline", () => {
         if (!protectedPage || recovering) return;
+        if (config.dailySync === true && user && !failure && !changed && expiresAt > Date.now()) { render(); return; }
         failure = Error("Sem conexão. Verifique a rede e tente novamente.");
         render();
+    });
+    window.addEventListener('online', () => {
+        if (config.dailySync === true && user && !changed && !recovering && !signingOut) {
+            if (failure && !invalidSession(failure)) failure = null;
+            revalidate().catch(() => {});
+        }
     });
     window.addEventListener("focus", resume);
     window.addEventListener("pageshow", resume);
@@ -386,8 +446,33 @@ const TrailerAuth = (() => {
         });
     });
     return { ready, scope, authorize, configured, render,
+        importIdentity() {
+            if (!user || changed || recovering || signingOut || logoutPending()) throw Object.assign(Error('session_required'), { code: 'session_required' });
+            return { account: user.id, email: user.email || user.id };
+        },
+        async importSession(expected) {
+            try {
+                const auth = await api();
+                if (validation) await validation;
+                const result = await bounded(auth.getSession());
+                if (result.error || result.data.session?.user.id !== expected) throw Error('session_required');
+                await verifyNormal(result.data.session);
+                if (validation) await validation;
+                if (scope() !== expected) throw Error('session_required');
+                return { account: expected, environment: new URL(config.url).origin, accessToken: result.data.session.access_token };
+            } catch (_) { throw Object.assign(Error('session_required'), { code: 'session_required' }); }
+        },
         login,
-        signup: async (email, password) => (await api()).signUp({ email, password, options: { emailRedirectTo: redirect("login.html") } }),
+        signup: async (email, password) => {
+            const auth = await api();
+            const result = await bounded(auth.signUp({ email, password, options: { emailRedirectTo: redirect("login.html") } }));
+            if (!result.error && result.data && result.data.session) {
+                const ended = await bounded(auth.signOut({ scope: "local" }));
+                if (ended.error) throw ended.error;
+            }
+            return result;
+        },
+        get emailConfirmed() { return confirmed; },
         reset: async email => (await api()).resetPasswordForEmail(email, { redirectTo: redirect("nova-senha.html") }),
         updatePassword,
         logout,

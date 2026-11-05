@@ -8,3 +8,9 @@ Documentos/
 !.env.example
 node_modules/
 *.log
+
+# Pacotes, capturas do site e cópias locais de reversão; não publicar pelo Pages.
+release/candidate-*/
+release/final-audit-*/
+release/main-root-preparation-*/
+supabase/.temp/

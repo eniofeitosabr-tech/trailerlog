@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"><script src="theme.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Trailer Log - Histórico</title>
@@ -344,7 +344,7 @@
     <noscript><style>#appCarregando { display: none !important; }</style></noscript>
 </head>
 
-<body data-requires-auth="true">
+<body data-requires-auth="true"><script src="theme-body.js"></script>
 <section id="appCarregando" class="app-inicializacao" role="status" aria-live="polite"><p>Carregando Trailer Log...</p></section>
 <section id="appFalhou" class="app-inicializacao" role="alert" hidden><h2>Não foi possível carregar o Trailer Log</h2><p>Verifique sua conexão e tente novamente. Seus registros foram preservados.</p><button type="button" onclick="location.reload()">Tentar novamente</button><a href="login.html">Conferir conta</a></section>
 <noscript><section class="app-inicializacao"><h2>Ative o JavaScript</h2><p>O Trailer Log precisa de JavaScript para verificar sua conta e carregar seus registros com segurança.</p><p>Após ativá-lo, recarregue esta página.</p></section></noscript>
@@ -362,26 +362,29 @@
         </div>
 
         <nav>
-            <a href="index.html">
-                📝 Registrar
-            </a>
-
-            <a href="historico.html" class="menu-ativo">
-                🕘 Histórico
-            </a>
-
-            <a href="historico.html">
-                📊 Relatórios
-            </a>
-
-            <a href="configuracoes.html">
-            ⚙️ Configurações
-            </a>
-
-            <a href="sobre.html">ℹ️ Sobre</a>
-        <a href="login.html" data-auth-logout>👤 Sair da conta</a>
-</nav>
+<a href="index.html" data-pay-i18n="navRegister">📝 Registrar</a>
+<a href="paycheck.html" data-pay-i18n="menu">💵 Meus Pagamentos</a>
+<a href="historico.html" data-pay-i18n="navHistory" class="menu-ativo" aria-current="page">🕘 Histórico</a>
+<a href="historico.html" data-pay-i18n="navReports">📊 Relatórios</a>
+<a href="configuracoes.html" data-pay-i18n="navSettings">⚙️ Configurações</a>
+<a href="sobre.html" data-pay-i18n="navAbout">ℹ️ Sobre</a>
 <p id="contaStatus" class="conta-sessao" role="status"></p>
+<a href="login.html" class="menu-last" data-auth-logout data-pay-i18n="navLogout">👤 Sair da conta</a>
+<button
+                type="button"
+                class="botao-tema"
+                onclick="alternarTema()"
+                aria-label="Alternar modo claro e escuro">
+
+                <span>🌙</span>
+
+                <span class="interruptor-tema">
+                    <span class="bolinha-tema"></span>
+                </span>
+
+            </button>
+</nav>
+
 
     </aside>
 
@@ -414,19 +417,7 @@
 
             <!-- BOTÃO DE TEMA -->
 
-            <button
-                type="button"
-                class="botao-tema"
-                onclick="alternarTema()"
-                aria-label="Alternar modo claro e escuro">
 
-                <span>🌙</span>
-
-                <span class="interruptor-tema">
-                    <span class="bolinha-tema"></span>
-                </span>
-
-            </button>
 
             <!-- ABAS -->
 
@@ -484,7 +475,7 @@
 
         </div>
 
-        <footer class="rodape-creditos">
+        <footer class="rodape-creditos"><div class="pay-tools pay-footer-language"><label><span data-pay-i18n="language">Idioma</span> <select data-pay-language><option value="pt">Português</option><option value="en">English</option></select></label></div>
             Trailer Log · Desenvolvido por <strong>Enio Feitosa</strong> · © 2026
         </footer>
     </main>
@@ -495,7 +486,8 @@
 <script src="supabase-config.js"></script>
 <script src="auth.js"></script>
 <script src="sha256.js"></script>
-<script src="storage.js"></script>
+<script src="payments.js"></script>
+<script src="daily-sync.js"></script><script src="storage.js"></script>
 <script>
 
 // ==================================
@@ -510,7 +502,7 @@ let tipoHistorico = "trailer";
 // ==================================
 
 function alternarTema() {
-    document.body.classList.toggle("dark-mode");
+    TrailerTheme.toggle();
 }
 
 
@@ -1113,5 +1105,5 @@ document.addEventListener("DOMContentLoaded", function() {
 
 </script>
 
-</body>
+<script src="payments-ui.js"></script></body>
 </html>
