@@ -12,8 +12,9 @@ function harness({ configured = false, userId = null, map = new Map(), mode = 'l
     const events = {}, controls = new Map(), requests = [], calls = [], inputs = [], classes = new Set();
     const get = id => {
         if (!controls.has(id)) controls.set(id, { value: '', textContent: '', hidden: true, disabled: false,
-            dataset: {}, style: {}, setAttribute() {}, addEventListener(type, cb) { this[type] = cb; },
-            querySelectorAll: () => inputs, reset() { for (const input of inputs) input.value = ''; } });
+            dataset: {}, style: {}, setAttribute() {}, addEventListener(type, cb) { this[type === 'close' ? 'close-event' : type] = cb; },
+            querySelectorAll: () => inputs, reset() { for (const input of inputs) input.value = ''; },
+            showModal() { this.open = true; }, close() { this.open = false; this['close-event']?.(); } });
         return controls.get(id);
     };
     for (const id of ['email', 'password', 'confirmPassword']) inputs.push(get(id));
@@ -39,7 +40,7 @@ function harness({ configured = false, userId = null, map = new Map(), mode = 'l
             supabase: { createClient: (...args) => { requests.push(args); return { auth }; } },
             addEventListener: (name, cb) => (events[name] ??= []).push(cb),
             dispatchEvent: event => { for (const cb of events[event.type] || []) cb(event); } },
-        document: { documentElement: { lang: 'pt-BR' }, body: { dataset: { authPage: mode }, classList: {
+        document: { documentElement: { lang: 'pt-BR', classList: { toggle() {} } }, body: { dataset: { authPage: mode }, classList: {
             add: name => classes.add(name), contains: name => classes.has(name),
             toggle: name => classes.has(name) ? classes.delete(name) : classes.add(name)
         } },
@@ -48,6 +49,7 @@ function harness({ configured = false, userId = null, map = new Map(), mode = 'l
             querySelectorAll: () => [], addEventListener: (name, cb) => (events[name] ??= []).push(cb) },
         localStorage: { getItem: name => map.get(name) ?? null, setItem: (name, value) => map.set(name, value), removeItem: name => map.delete(name) }
     });
+    vm.runInContext(source('theme.js'), context);
     vm.runInContext(source('auth.js'), context);
     for (const file of ['sha256.js', 'storage.js']) vm.runInContext(source(file), context);
     return { context, get, calls, map, requests, run: code => vm.runInContext(code, context),
@@ -96,6 +98,39 @@ async function main() {
         if (mode === 'signup') assert.equal(page.calls[0].args[0].options.emailRedirectTo, 'https://fixture.example/app/login.html');
         if (mode === 'recovery') assert.equal(page.calls[0].args[1].redirectTo, 'https://fixture.example/app/nova-senha.html');
     }
+    for (const [result, expected] of [
+        [{ data: { session: null, user: { id: A } }, error: null }, /link de confirmação/],
+        [{ data: { session: sessionFor(A) }, error: null }, /confirmação não é necessária/],
+        [{ data: {}, error: { code: 'network_error' } }, /Não foi possível/]
+    ]) {
+        const signup = harness({ configured: true, mode: 'signup' });
+        await signup.run('TrailerAuth.ready');
+        vm.runInContext(source('auth-page.js'), signup.context); await signup.run('AuthPage.ready');
+        signup.get('password').value = signup.get('confirmPassword').value = 'FICTICIO-apenas-teste';
+        signup.result(result); await signup.run('AuthPage.submit({preventDefault(){}})');
+        assert.match(signup.get('authStatus').textContent, expected);
+        assert.equal(signup.calls.some(c => c.method === 'signOut'), !!result.data.session && !result.error);
+        assert.equal(!!signup.get('signupConfirmation').open, !result.error && !result.data.session);
+        if (result.error) assert(!signup.get('authStatus').textContent.includes('Enviamos'));
+    }
+    const delayed = harness({ configured: true, mode: 'signup' });
+    await delayed.run('TrailerAuth.ready');
+    vm.runInContext(source('auth-page.js'), delayed.context); await delayed.run('AuthPage.ready');
+    delayed.run('globalThis.signupNavigations=[]; window.location.replace=url=>signupNavigations.push(url)');
+    delayed.get('password').value = delayed.get('confirmPassword').value = 'FICTICIO-apenas-teste';
+    let finishSignup;
+    delayed.result(new Promise(resolve => { finishSignup = resolve; }));
+    const submitting = delayed.run('AuthPage.submit({preventDefault(){}})');
+    assert.equal(!!delayed.get('signupConfirmation').open, false);
+    assert.equal(delayed.run('signupNavigations.length'), 0);
+    finishSignup({ data: { session: null, user: { id: A } }, error: null });
+    await submitting;
+    assert.equal(delayed.get('signupConfirmation').open, true);
+    assert.equal(delayed.run('signupNavigations.length'), 0);
+    await delayed.run('AuthPage.submit({preventDefault(){}})');
+    assert.equal(delayed.calls.filter(c => c.method === 'signUp').length, 1);
+    delayed.get('closeSignupConfirmation').click();
+    assert.equal(delayed.run('signupNavigations[0]'), 'https://fixture.example/app/login.html');
     const ui = harness({ configured: true, mode: 'signup' }); await ui.run('TrailerAuth.ready');
     vm.runInContext(source('auth-page.js'), ui.context); await ui.run("AuthPage.ready");
     ui.get('password').value = 'a'; ui.get('confirmPassword').value = 'b';
@@ -109,6 +144,8 @@ async function main() {
     assert.equal(ui.get('authStatus').textContent, 'Passwords do not match.');
     assert.equal(ui.context.document.documentElement.lang, 'en');
     ui.get('themeAuth').click();
+    assert.equal(ui.map.get('trailerlog-theme'), 'dark');
+    ui.get('language').change({ target: { value: 'pt' } });
     assert.equal(ui.map.get('trailerlog-theme'), 'dark');
     ui.get('themeAuth').click();
     assert.equal(ui.map.get('trailerlog-theme'), 'light');

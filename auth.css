@@ -17,6 +17,12 @@
 .auth-tools label { margin: 0; }
 .auth-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
 #authStatus { min-height: 24px; }
+.auth-confirmation { box-sizing: border-box; width: calc(100% - 32px); max-width: 440px; max-height: calc(100dvh - 32px); overflow: auto; padding: 24px; border: 1px solid #cbd5e1; border-radius: 16px; background: #fff; color: #0f172a; box-shadow: 0 8px 32px #0004; }
+.auth-confirmation::backdrop { background: #0008; }
+.auth-confirmation h2 { margin-top: 0; }
+.auth-confirmation p { line-height: 1.6; }
+.auth-confirmation button { min-height: 44px; max-width: 100%; white-space: normal; }
+body.dark-mode .auth-confirmation { background: #0f172a; color: #f1f5f9; border-color: #334155; }
 body.dark-mode .auth-card { background: #0f172a; border-color: #334155; }
 body.dark-mode .auth-card a { color: #93c5fd; }
 @media (max-width: 768px) { .auth-shell { margin: 12px auto; } .auth-card { padding: 20px; } }

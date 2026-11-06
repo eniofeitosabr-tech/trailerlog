@@ -39,6 +39,10 @@ const AuthPage = (() => {
             logout: "Sign out on this browser", loggedOut: "Signed out. Local records were preserved.",
             open: "Open app", title: "Trailer Log · Account", configuration: "Unable to initialize authentication. Check HTTPS, your connection and the public Supabase configuration." }
     };
+    messages.pt.emailSentTitle = "Confira seu e-mail";
+    messages.pt.closeSignup = "Fechar e ir para entrar";
+    messages.en.emailSentTitle = "Check your email";
+    messages.en.closeSignup = "Close and sign in";
     let language = "pt", busy = false, handlersReady = false, authReady = false, statusKey = null, statusError = false;
     const mode = document.body.dataset.authPage;
     const el = id => document.getElementById(id);
@@ -77,7 +81,7 @@ const AuthPage = (() => {
     }
     async function submit(event) {
         event.preventDefault();
-        if (busy) return;
+        if (busy || el("signupConfirmation")?.open) return;
         if (!handlersReady || !authReady) return status("busy");
         if (!TrailerAuth.configured) return status("unavailable", true);
         if (mode === "password" && !TrailerAuth.recoveryReady) return status("expired", true);
@@ -94,6 +98,9 @@ const AuthPage = (() => {
             el("authForm").reset();
             status({ login: "signed", signup: result.data && result.data.session ? "createdReady" : "created", recovery: "sent", password: "updated" }[mode]);
             el("openApp").hidden = mode !== "login";
+            if (mode === "signup" && !result.data?.session) {
+                el("signupConfirmation").showModal();
+            }
         } catch (error) { status(mode === "password" && TrailerAuth.recoveryPasswordUpdated ? "finishRecovery" : errorKey(error), true); }
         finally { loading(false); }
     }
@@ -111,6 +118,13 @@ const AuthPage = (() => {
         TrailerTheme.toggle();
     });
     el("authForm").addEventListener("submit", submit);
+    if (mode === "signup") {
+        el("closeSignupConfirmation").addEventListener("click", () => el("signupConfirmation").close());
+        // Native close also covers Escape; navigation never precedes dismissal.
+        el("signupConfirmation").addEventListener("close", () => {
+            window.location.replace(new URL("login.html", window.location.href).href);
+        });
+    }
     el("retryAuth").addEventListener("click", () => window.location.reload());
     el("logoutAuth").addEventListener("click", async () => {
         if (busy) return;

@@ -1,5 +1,19 @@
 # Testes de consistência
 
+`node tests/daily-sync-status.test.cjs`: banner permanente ausente nas quatro páginas
+que usam daily-sync.js, estado normal oculto, pendências/carregamento/conflitos/erros
+visíveis em PT/EN e renderização sem escrita ou envio.
+
+Cadastro: `node tests/auth.test.cjs` verifica resposta pendente sem sucesso/navegação,
+pop-up somente após sucesso com confirmação exigida, bloqueio de reenvio enquanto aberto
+e fechamento seguido de login. `node tests/signup-browser.test.cjs` verifica o diálogo
+nativo no Chrome real com SDK real e rede interceptada: PT/EN, claro/escuro, foco, largura
+mobile, fechamento, erro da API e confirmação dispensada. Nenhuma conta é criada no Supabase.
+Esse runner serve uma configuração efêmera com dailySync desabilitada para suas fixtures
+de pagamentos locais; o arquivo ativo e a configuração publicada não são alterados.
+Safari físico no iPhone ainda requer validação após uma publicação autorizada.
+
+
 Execute `node tests/access.test.cjs` para login obrigatório: visitantes,
 configuração ausente, sessão inválida/expirada, indisponibilidade, validação online
 antes de gravar, isolamento A/B, legado global intacto, operações em fila e logout

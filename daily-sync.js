@@ -207,8 +207,12 @@ if (typeof window !== 'undefined' && TrailerDailySync.enabled) (() => {
         let bar = document.getElementById('dailySyncStatus');
         if (!bar) { const parent = document.querySelector('.conteudo-principal'); if (!parent) return; bar = document.createElement('section'); bar.id = 'dailySyncStatus'; bar.className = 'cartao-backup'; bar.setAttribute('role', 'status'); parent.prepend(bar); }
         const en = document.documentElement.lang === 'en';
-        try { const s = get().info(); bar.textContent = (en ? 'New daily records. Earlier browser data remains separate. ' : 'Novos registros diários. Os dados anteriores do navegador estão preservados à parte. ') + (s.status === 'conflict' ? (en ? 'Conflict: review required; nothing overwritten. ' : 'Conflito: revisão necessária; nada sobrescrito. ') : s.status === 'paused' ? (en ? 'Connection/session paused. ' : 'Conexão/sessão pausada. ') : s.initialized ? (en ? 'Sync active. ' : 'Sincronização ativa. ') : (en ? 'Loading account… ' : 'Carregando conta… ')) + (en ? 'Pending: ' : 'Pendentes: ') + s.pending; }
-        catch (_) { bar.textContent = en ? 'Review your account to resume.' : 'Confira sua conta para retomar.'; }
+        try {
+            const s = get().info();
+            bar.hidden = s.initialized && s.status === 'ready' && s.pending === 0 && !s.code;
+            bar.textContent = bar.hidden ? '' : (s.status === 'conflict' ? (en ? 'Conflict: review required; nothing overwritten. ' : 'Conflito: revisão necessária; nada sobrescrito. ') : s.status === 'paused' || s.code ? (en ? 'Connection/session paused. ' : 'Conexão/sessão pausada. ') : !s.initialized ? (en ? 'Loading account… ' : 'Carregando conta… ') : '') + (en ? 'Pending: ' : 'Pendentes: ') + s.pending;
+        }
+        catch (_) { bar.hidden = false; bar.textContent = en ? 'Review your account to resume.' : 'Confira sua conta para retomar.'; }
     }
     for (const name of ['online', 'focus', 'traileraccountready']) window.addEventListener(name, schedule);
     window.addEventListener('trailerdailystatus', render); window.addEventListener('trailerpaylanguage', render);
