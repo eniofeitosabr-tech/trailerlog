@@ -17,6 +17,17 @@
  padding: 12px; line-height: 1.4; white-space: normal;
 }
 body.dark-mode #payStopsForm { border-color: #334155; }
+#settingsRateForm {
+ grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 12px;
+}
+#settingsRateForm > label { min-width: 0; margin: 0; gap: 8px; }
+#settingsRateForm input, #settingsRateForm button {
+ box-sizing: border-box; width: 100%; min-height: 48px; margin: 0;
+}
+#settingsRateForm button {
+ align-self: end; display: flex; align-items: center; justify-content: center;
+ padding: 12px; line-height: 1.4; white-space: normal;
+}
 .pay-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .pay-grid label, .pay-card form > label { display: flex; flex-direction: column; gap: 5px; line-height: 1.5; }
 .pay-grid input:not([type=checkbox]), .pay-grid select { width: 100%; min-width: 0; }
@@ -164,6 +175,7 @@ body.dark-mode .detailed-table td, body.dark-mode .detailed-table th, body.dark-
  .pay-page button, .pay-journey button { width: 100%; margin-left: 0; margin-right: 0; }
 }
 @media screen and (max-width: 768px) {
+ #settingsRateForm { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
  #payStopsForm { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
  .pay-grid .pay-check { min-height: 44px; cursor: pointer; }
  .pay-card summary { min-height: 44px; padding-block: 8px; box-sizing: border-box; }
