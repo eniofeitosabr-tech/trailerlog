@@ -285,6 +285,10 @@
                     <h2 data-pay-i18n="active">Pagamento da jornada ativa</h2>
                     <p id="payActiveSummary"></p>
                     <p data-pay-i18n="activeNote">Informe a soma total Loja → Backhaul → Base. O valor substitui o total anterior; salvar novamente não duplica milhas nem bônus.</p>
+                    <form id="payStopsForm" class="pay-grid">
+                        <label><span data-pay-i18n="stops">Número de paradas</span><select id="payStops"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+                        <button id="paySaveStops" type="submit" data-pay-i18n="saveStops">Atualizar paradas</button>
+                    </form>
                     <form id="payMilesForm">
                     <div class="pay-grid">
                         <label class="pay-original"><span data-pay-i18n="additional">Milhas adicionais do Backhaul</span><input id="payAdditional" type="number" min="0" max="2000000" step="0.01" value="0" required></label>

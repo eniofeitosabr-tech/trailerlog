@@ -3,6 +3,9 @@
 .pay-page [hidden], .pay-journey [hidden] { display: none !important; }
 .pay-card { background: #fff; color: #1e293b; padding: 20px; margin: 18px 0; border: 1px solid #cbd5e1; border-radius: 14px; overflow-wrap: anywhere; }
 .pay-card h2 { font-size: 21px; margin-top: 0; }
+#payStopsForm { align-items: end; }
+#payStopsForm button { margin: 0; min-height: 48px; }
+#payStopsForm select { min-height: 48px; margin: 0; }
 .pay-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .pay-grid label, .pay-card form > label { display: flex; flex-direction: column; gap: 5px; line-height: 1.5; }
 .pay-grid input:not([type=checkbox]), .pay-grid select { width: 100%; min-width: 0; }

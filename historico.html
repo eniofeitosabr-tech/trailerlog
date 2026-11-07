@@ -37,7 +37,7 @@
 
         .abas-historico {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
             margin-bottom: 24px;
         }
@@ -188,6 +188,8 @@
         .registro-acoes {
             display: flex;
             justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-top: 16px;
         }
 
@@ -299,6 +301,9 @@
             border-color: #991b1b;
         }
 
+        .filtros-jornada { min-width: 0; }
+        .filtros-jornada button { margin: 12px 0; min-height: 44px; white-space: normal; }
+        .filtros-jornada [hidden] { display: none !important; }
         /* CELULAR E TABLET */
 
         @media (max-width: 768px) {
@@ -422,6 +427,7 @@
             <!-- ABAS -->
 
             <div class="abas-historico">
+                <button type="button" id="abaJornadas" onclick="selecionarAba('journey')" data-history-i18n="journeys">Jornadas</button>
 
                 <button
                     type="button"
@@ -459,6 +465,16 @@
 
             </div>
 
+            <div class="area-pesquisa filtros-jornada">
+                <label for="dataPesquisa" data-history-i18n="day">Dia de início da jornada</label>
+                <input type="date" id="dataPesquisa" onchange="mostrarHistorico()">
+                <button type="button" onclick="limparDataHistorico()" data-history-i18n="clearDate">Limpar data</button>
+                <div id="filtroTrailerJornada" hidden>
+                    <label for="trailerPesquisa" data-history-i18n="trailerFilter">Pesquisar Trailer</label>
+                    <input type="text" id="trailerPesquisa" autocomplete="off" oninput="mostrarHistorico()">
+                </div>
+            </div>
+            <p id="historicoStatus" role="status" aria-live="polite"></p>
             <!-- RESULTADOS -->
 
             <div id="historico"></div>
@@ -495,6 +511,76 @@
 // ==================================
 
 let tipoHistorico = "trailer";
+const textosHistorico = {
+    pt: { journeys: "Jornadas", day: "Dia de início da jornada", clearDate: "Limpar data", trailerFilter: "Pesquisar Trailer",
+        truckFilter: "Pesquisar Caminhão", truckHint: "Digite o número do Caminhão", trailerHint: "Digite o número do Trailer",
+        visitRemove: "Excluir utilização (mantém pagamento)", visitNote: "Excluir uma utilização mantém a jornada e seu pagamento. Para removê-los, use Excluir jornada e pagamento.", removeWithPay: "Excluir jornada e pagamento", visitConfirm: "Excluir somente esta utilização do trailer? A jornada, seu pagamento e as detenções serão mantidos.", visitDeleted: "Utilização excluída. Jornada e pagamento mantidos.", remove: "Excluir jornada", deleted: "Jornada excluída. Pagamentos e totais atualizados.",
+        confirm: "Excluir definitivamente esta jornada e seus registros vinculados de trailers, pagamentos e detenções?",
+        irreversible: "Esta ação não poderá ser desfeita.", changed: "A jornada foi alterada ou excluída. Atualize a pesquisa antes de tentar novamente.",
+        empty: "Nenhuma jornada encontrada", none: "Confira os filtros de caminhão, trailer e dia.", all: "Todos os caminhões",
+        unknown: "Não informada", journey: "Jornada", truck: "Caminhão", truckNumber: "Número do Caminhão", condition: "Condição do Caminhão", startDate: "Data de Início", startTime: "Hora de Início", endDate: "Data de Término", endTime: "Hora de Término", trailers: "Trailers Utilizados", uses: "Utilizações de Trailers", notes: "Observações do Caminhão", noTrailer: "Nenhum Trailer registrado", noNotes: "Nenhuma", countOne: "Jornada identificada no sistema", countMany: "Jornadas identificadas no sistema", start: "Início", finished: "Finalizada", active: "Em andamento" },
+    en: { journeys: "Journeys", day: "Journey start day", clearDate: "Clear date", trailerFilter: "Search Trailer",
+        truckFilter: "Search Truck", truckHint: "Enter the Truck number", trailerHint: "Enter the Trailer number",
+        visitRemove: "Delete visit (keeps payment)", visitNote: "Deleting a visit keeps the journey and its payment. To remove them, use Delete journey and payment.", removeWithPay: "Delete journey and payment", visitConfirm: "Delete only this trailer visit? The journey, its payment and detentions will be kept.", visitDeleted: "Visit deleted. Journey and payment kept.", remove: "Delete journey", deleted: "Journey deleted. Payments and totals updated.",
+        confirm: "Permanently delete this journey and its linked trailer records, payments and detentions?",
+        irreversible: "This action cannot be undone.", changed: "The journey was changed or deleted. Refresh the search before trying again.",
+        empty: "No journeys found", none: "Check the truck, trailer and day filters.", all: "All trucks",
+        unknown: "Not provided", journey: "Journey", truck: "Truck", truckNumber: "Truck number", condition: "Truck condition", startDate: "Start date", startTime: "Start time", endDate: "End date", endTime: "End time", trailers: "Trailers used", uses: "Trailer visits", notes: "Truck notes", noTrailer: "No Trailer recorded", noNotes: "None", countOne: "Journey recorded in the system", countMany: "Journeys recorded in the system", start: "Start", finished: "Completed", active: "Active" }
+};
+function textoHistorico(key) {
+    const en = typeof PaycheckUI !== "undefined" && PaycheckUI.language === "en";
+    return textosHistorico[en ? "en" : "pt"][key];
+}
+function traduzirHistorico() {
+    document.querySelectorAll("[data-history-i18n]").forEach(node => { node.textContent = textoHistorico(node.dataset.historyI18n); });
+    const trailer = tipoHistorico === "trailer";
+    document.getElementById("labelPesquisa").textContent = textoHistorico(trailer ? "trailerFilter" : "truckFilter");
+    document.getElementById("campoPesquisa").placeholder = textoHistorico(trailer ? "trailerHint" : "truckHint");
+}
+function diaLocalHistorico(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
+}
+function correspondeDiaHistorico(value) {
+    const selected = document.getElementById("dataPesquisa").value;
+    return !selected || diaLocalHistorico(value) === selected;
+}
+function limparDataHistorico() {
+    document.getElementById("dataPesquisa").value = "";
+    mostrarHistorico();
+}
+let exclusaoJornadaEmAndamento = false;
+function removerJornadaFinalizada(data, selected) {
+    const matches = data.jornadasSalvas.filter(j => j.id === selected.id);
+    if (data.jornadaAtiva?.id === selected.id || matches.length !== 1 ||
+        matches[0].status === "Em andamento" || JSON.stringify(matches[0]) !== JSON.stringify(selected)) {
+        throw Error(textoHistorico("changed"));
+    }
+    data.jornadasSalvas = data.jornadasSalvas.filter(j => j.id !== selected.id);
+    // Only explicit journey associations are owned by this deletion. Keep equipment and unlinked legacy visits.
+    data.trailersSalvos = data.trailersSalvos.filter(use => use.jornadaId !== selected.id);
+}
+async function excluirJornada(index) {
+    if (exclusaoJornadaEmAndamento) return;
+    try {
+        TrailerAuth.scope();
+        const snapshot = snapshotHistorico;
+        const selected = snapshot?.data.jornadasSalvas[index];
+        if (!selected || snapshot.data.jornadaAtiva?.id === selected.id || selected.status === "Em andamento") throw Error(textoHistorico("changed"));
+        const identity = textoHistorico("journey") + ": " + selected.id + "\n" + textoHistorico("truck") + ": " + selected.truck +
+            "\n" + textoHistorico("start") + ": " + formatarData(selected.inicio) + " " + formatarHora(selected.inicio);
+        if (!confirm(textoHistorico("confirm") + "\n\n" + identity + "\n\n" + textoHistorico("irreversible"))) return;
+        exclusaoJornadaEmAndamento = true;
+        await TrailerStorage.change(data => removerJornadaFinalizada(data, selected), snapshot.token);
+        mostrarHistorico();
+        document.getElementById("historicoStatus").textContent = textoHistorico("deleted");
+    } catch (error) { alert(error.message); }
+    finally { exclusaoJornadaEmAndamento = false; }
+}
+window.addEventListener("trailerpaylanguage", () => { traduzirHistorico(); if (snapshotHistorico) mostrarHistorico(); });
+
 
 
 // ==================================
@@ -539,29 +625,29 @@ function escaparHTML(valor) {
 
 function formatarData(valor) {
 
-    if (!valor) return "Não informada";
+    if (!valor) return textoHistorico("unknown");
 
     const data = new Date(valor);
 
     if (isNaN(data.getTime())) {
-        return "Não informada";
+        return textoHistorico("unknown");
     }
 
-    return data.toLocaleDateString("pt-BR");
+    return data.toLocaleDateString(typeof PaycheckUI !== "undefined" && PaycheckUI.language === "en" ? "en-US" : "pt-BR");
 }
 
 
 function formatarHora(valor) {
 
-    if (!valor) return "Não informada";
+    if (!valor) return textoHistorico("unknown");
 
     const data = new Date(valor);
 
     if (isNaN(data.getTime())) {
-        return "Não informada";
+        return textoHistorico("unknown");
     }
 
-    return data.toLocaleTimeString("pt-BR", {
+    return data.toLocaleTimeString(typeof PaycheckUI !== "undefined" && PaycheckUI.language === "en" ? "en-US" : "pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false
@@ -600,6 +686,8 @@ function selecionarAba(tipo) {
     );
 
     pesquisa.value = "";
+    document.getElementById("abaJornadas").classList.toggle("aba-ativa", tipo === "journey");
+    document.getElementById("filtroTrailerJornada").hidden = tipo !== "journey";
 
     if (tipo === "trailer") {
 
@@ -616,6 +704,7 @@ function selecionarAba(tipo) {
             "Digite o número do Caminhão";
     }
 
+    traduzirHistorico();
     mostrarHistorico();
 }
 
@@ -658,7 +747,7 @@ function mostrarHistorico(snapshot) {
 
     // COMEÇAR COM A TELA LIMPA
 
-    if (pesquisa === "") {
+    if (pesquisa === "" && !document.getElementById("dataPesquisa").value && tipoHistorico !== "journey") {
 
         mostrarMensagem(
             "Pesquise por um número",
@@ -695,7 +784,7 @@ function mostrarHistoricoTrailer(numero) {
     const registros = trailers
         .map((item, index) => ({ item, index }))
         .filter(registro =>
-            String(registro.item.trailer || "").trim() === numero
+            (!numero || String(registro.item.trailer || "").trim() === numero) && correspondeDiaHistorico(registro.item.jornadaId ? [...carregarLista("jornadasSalvas"), ...(carregarJornadaAtiva() ? [carregarJornadaAtiva()] : [])].find(j => j.id === registro.item.jornadaId)?.inicio : registro.item.data)
         )
         .reverse();
 
@@ -726,6 +815,9 @@ function mostrarHistoricoTrailer(numero) {
     `;
 
     registros.forEach(({item, index}) => {
+        const linkedIndex = carregarLista("jornadasSalvas").findIndex(j => j.id === item.jornadaId);
+        const linked = linkedIndex < 0 ? null : carregarLista("jornadasSalvas")[linkedIndex];
+        const canDeleteJourney = linked && linked.status !== "Em andamento" && carregarJornadaAtiva()?.id !== linked.id;
 
         html += `
             <div class="registro-historico trailer">
@@ -768,6 +860,7 @@ function mostrarHistoricoTrailer(numero) {
                     ${escaparHTML(item.observacoes || "Nenhuma")}
                 </div>
 
+                <p class="aviso-legado">${escaparHTML(textoHistorico("visitNote"))}</p>
                 <div class="registro-acoes">
 
                     <button
@@ -775,9 +868,10 @@ function mostrarHistoricoTrailer(numero) {
                         class="btn-excluir"
                         onclick="excluirTrailer(${index})">
 
-                        🗑️ Excluir Registro
+                        🗑️ ${escaparHTML(textoHistorico("visitRemove"))}
 
                     </button>
+                    ${canDeleteJourney ? `<button type="button" class="btn-excluir" onclick="excluirJornada(${linkedIndex})">${escaparHTML(textoHistorico("removeWithPay"))}</button>` : ""}
 
                 </div>
 
@@ -820,7 +914,11 @@ function mostrarHistoricoTruck(numero) {
 
     const jornadasDoTruck = jornadas
         .filter(jornada =>
-            String(jornada.truck || "").trim() === numero
+            (!numero || String(jornada.truck || "").trim() === numero) && correspondeDiaHistorico(jornada.inicio) &&
+            (tipoHistorico !== "journey" || !document.getElementById("trailerPesquisa").value.trim() ||
+                [jornada.trailer, jornada.pagamento?.initialTrailer, ...trailers.filter(use => use.jornadaId === jornada.id).map(use => use.trailer)]
+                    .includes(document.getElementById("trailerPesquisa").value.trim())) &&
+            (tipoHistorico !== "journey" || jornadaAtiva?.id !== jornada.id)
         )
         .filter((jornada, index, lista) =>
             lista.findIndex(outro =>
@@ -842,13 +940,13 @@ function mostrarHistoricoTruck(numero) {
     const registrosAntigos = trailers.filter(
         item =>
             String(item.truck || "").trim() === numero &&
-            !item.jornadaId
+            !item.jornadaId && correspondeDiaHistorico(item.data) && tipoHistorico !== "journey"
     );
 
     if (
         jornadasDoTruck.length === 0 &&
         registrosAntigos.length === 0 &&
-        !cadastro
+        !cadastro && tipoHistorico !== "journey" && !document.getElementById("dataPesquisa").value
     ) {
 
         mostrarMensagem(
@@ -859,10 +957,13 @@ function mostrarHistoricoTruck(numero) {
         return;
     }
 
+    if ((tipoHistorico === "journey" || document.getElementById("dataPesquisa").value) && !jornadasDoTruck.length && !registrosAntigos.length) {
+        mostrarMensagem(textoHistorico("empty"), textoHistorico("none")); return;
+    }
     let html = `
         <div class="resumo-utilizacoes">
 
-            <h2>🚛 Caminhão ${escaparHTML(numero)}</h2>
+            <h2>🚛 ${escaparHTML(numero || textoHistorico("all"))}</h2>
 
             <div class="numero-utilizacoes">
                 ${jornadasDoTruck.length}
@@ -870,8 +971,8 @@ function mostrarHistoricoTruck(numero) {
 
             <p class="legenda-resumo">
                 ${jornadasDoTruck.length === 1
-                    ? "Jornada identificada no sistema"
-                    : "Jornadas identificadas no sistema"}
+                    ? textoHistorico("countOne")
+                    : textoHistorico("countMany")}
             </p>
 
         </div>
@@ -879,7 +980,7 @@ function mostrarHistoricoTruck(numero) {
 
     // MOSTRAR CADASTRO, SE EXISTIR
 
-    if (cadastro && jornadasDoTruck.length === 0) {
+    if (cadastro && jornadasDoTruck.length === 0 && !document.getElementById("dataPesquisa").value && tipoHistorico !== "journey") {
 
         html += `
             <div class="registro-historico truck">
@@ -928,73 +1029,73 @@ function mostrarHistoricoTruck(numero) {
             ? trailersDaJornada
                 .map(item => escaparHTML(item.trailer))
                 .join(", ")
-            : "Nenhum Trailer registrado";
+            : textoHistorico("noTrailer");
 
         const situacao =
             jornada.status === "Finalizada"
-                ? "Finalizada"
-                : "Em andamento";
+                ? textoHistorico("finished")
+                : textoHistorico("active");
 
         html += `
             <div class="registro-historico truck">
 
                 <div class="registro-titulo">
-                    🚛 Jornada — ${escaparHTML(situacao)}
+                    🚛 ${escaparHTML(textoHistorico("journey"))} — ${escaparHTML(situacao)}
                 </div>
 
                 <div class="registro-dados">
 
                     <div class="registro-dado">
-                        <strong>Número do Caminhão</strong>
+                        <strong>${escaparHTML(textoHistorico("truckNumber"))}</strong>
                         <span>${escaparHTML(jornada.truck)}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Condição do Caminhão</strong>
-                        <span>${escaparHTML(jornada.condicaoTruck || "Não informada")}</span>
+                        <strong>${escaparHTML(textoHistorico("condition"))}</strong>
+                        <span>${escaparHTML(jornada.condicaoTruck || textoHistorico("unknown"))}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Data de Início</strong>
+                        <strong>${escaparHTML(textoHistorico("startDate"))}</strong>
                         <span>${formatarData(jornada.inicio)}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Hora de Início</strong>
+                        <strong>${escaparHTML(textoHistorico("startTime"))}</strong>
                         <span>${formatarHora(jornada.inicio)}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Data de Término</strong>
+                        <strong>${escaparHTML(textoHistorico("endDate"))}</strong>
                         <span>${jornada.fim
                             ? formatarData(jornada.fim)
-                            : "Em andamento"}</span>
+                            : textoHistorico("active")}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Hora de Término</strong>
+                        <strong>${escaparHTML(textoHistorico("endTime"))}</strong>
                         <span>${jornada.fim
                             ? formatarHora(jornada.fim)
-                            : "Em andamento"}</span>
+                            : textoHistorico("active")}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Trailers Utilizados</strong>
+                        <strong>${escaparHTML(textoHistorico("trailers"))}</strong>
                         <span>${listaTrailers}</span>
                     </div>
 
                     <div class="registro-dado">
-                        <strong>Utilizações de Trailers</strong>
+                        <strong>${escaparHTML(textoHistorico("uses"))}</strong>
                         <span>${trailersDaJornada.length}</span>
                     </div>
 
                 </div>
 
                 <div class="registro-observacoes">
-                    <strong>Observações do Caminhão:</strong>
-                    ${escaparHTML(jornada.observacoesTruck || "Nenhuma")}
+                    <strong>${escaparHTML(textoHistorico("notes"))}:</strong>
+                    ${escaparHTML(jornada.observacoesTruck || textoHistorico("noNotes"))}
                 </div>
-
+                ${jornadaAtiva?.id !== jornada.id && jornada.status !== "Em andamento" ? `<div class="registro-acoes"><button type="button" class="btn-excluir" onclick="excluirJornada(${jornadasFinalizadas.indexOf(jornada)})">${escaparHTML(textoHistorico("remove"))}</button></div>` : ""}
             </div>
         `;
     });
@@ -1036,7 +1137,7 @@ function mostrarHistoricoTruck(numero) {
                         </div>
 
                         <div class="registro-dado">
-                            <strong>Condição do Caminhão</strong>
+                            <strong>${escaparHTML(textoHistorico("condition"))}</strong>
                             <span>${escaparHTML(item.estadoTruck || "Não informada")}</span>
                         </div>
 
@@ -1067,9 +1168,10 @@ function mostrarHistoricoTruck(numero) {
 
 async function excluirTrailer(index) {
     try { TrailerAuth.scope(); } catch (_) { return alert("Entre novamente para acessar os registros."); }
-    const registro = snapshotHistorico && snapshotHistorico.data.trailersSalvos[index];
+    const snapshot = snapshotHistorico;
+    const registro = snapshot && snapshot.data.trailersSalvos[index];
     if (!registro) return alert("Registro não encontrado. Atualize a pesquisa.");
-    if (!confirm("Deseja realmente excluir o registro do Trailer " + registro.trailer + "?\n\nEssa ação não poderá ser desfeita.")) return;
+    if (!confirm(textoHistorico("visitConfirm") + "\n\nTrailer: " + registro.trailer + "\n" + textoHistorico("irreversible"))) return;
     try {
         await TrailerStorage.change(data => {
             const position = data.trailersSalvos.findIndex(item => item.registroId === registro.registroId);
@@ -1087,7 +1189,9 @@ async function excluirTrailer(index) {
                 jornada.condicaoCarga = ultimo ? ultimo.condition || "" : "";
                 jornada.observacoesTrailer = ultimo ? ultimo.observacoes || "" : "";
             }
-        });
+        }, snapshot.token);
+        mostrarHistorico();
+        document.getElementById("historicoStatus").textContent = textoHistorico("visitDeleted");
     } catch (error) { alert(error.message); }
 }
 

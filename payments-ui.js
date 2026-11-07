@@ -2,7 +2,7 @@
 const PaycheckUI = (() => {
     const messages = {
         pt: {
-            unknown: "Não informado",
+            stops: "Número de paradas", additionalStops: "Paradas adicionais remuneradas", stopBonus: "Bônus por paradas", saveStops: "Atualizar paradas", unknown: "Não informado",
             navRegister: "📝 Registrar", navHistory: "🕘 Histórico", navReports: "📊 Relatórios", navSettings: "⚙️ Configurações", navAbout: "ℹ️ Sobre", navLogout: "👤 Sair da conta",
             menu: "💵 Meus Pagamentos", title: "Meus Pagamentos", language: "Idioma", theme: "Alternar tema",
             start: "Pagamento da jornada", original: "Milhas originais da jornada", backhaul: "Backhaul",
@@ -10,7 +10,7 @@ const PaycheckUI = (() => {
             store: "Milhas da loja até o backhaul (total acumulado)", base: "Milhas do backhaul até a base (total acumulado)",
             active: "Pagamento da jornada ativa", saveMiles: "Salvar milhas adicionais",
             payable: "Milhas para pagamento", preview: "Estimativa da jornada (sem bônus diário de fim de semana)",
-            rate: "Tarifa por milha (US$)", detentionRate: "Tarifa de detenção por hora (US$)", detentionMinutes: "Minutos de detenção", detentionCents: "Subtotal de detenção", date: "Data local da jornada", from: "De", to: "Até",
+            rate: "Valor por milha (US$)", detentionRate: "Tarifa de detenção por hora (US$)", detentionMinutes: "Minutos de detenção", detentionCents: "Subtotal de detenção", date: "Data local da jornada", from: "De", to: "Até",
             filter: "Exibir período", settings: "Tarifa para novas jornadas",
             saveRate: "Salvar tarifa", rateNote: "A alteração vale para novas jornadas. Jornadas existentes preservam a tarifa registrada.",
             detentionRateNote: "A tarifa de detenção vale apenas para novos registros, inclusive na jornada ativa. Detenções anteriores preservam a tarifa histórica.",
@@ -29,7 +29,7 @@ const PaycheckUI = (() => {
             pending: "Aguarde…", field: "Campo", old: "Anterior", next: "Novo"
         },
         en: {
-            unknown: "Not provided",
+            stops: "Number of stops", additionalStops: "Paid additional stops", stopBonus: "Stop bonus", saveStops: "Update stops", unknown: "Not provided",
             navRegister: "📝 Register", navHistory: "🕘 History", navReports: "📊 Reports", navSettings: "⚙️ Settings", navAbout: "ℹ️ About", navLogout: "👤 Sign out",
             menu: "💵 My Paycheck", title: "My Paycheck", language: "Language", theme: "Toggle theme",
             start: "Journey payment", original: "Original journey miles", backhaul: "Backhaul",
@@ -76,6 +76,7 @@ const PaycheckUI = (() => {
     function form(container, prefix) {
         container.dataset.payForm = prefix;
         container.innerHTML = `<div class="pay-grid">
+            ${label("stops", `<select id="${prefix}stops">${[1,2,3,4,5].map(n => `<option value="${n}">${n}</option>`).join("")}</select>`)}
             <div class="pay-original">${label("original", numeric(prefix + "original"))}</div>
             <div class="pay-option">
                 <label class="pay-check"><input id="${prefix}backhaul" type="checkbox"><span data-pay-i18n="backhaul">${t("backhaul")}</span></label>
@@ -97,7 +98,7 @@ const PaycheckUI = (() => {
     }
     function input(prefix) {
         return TrailerPay.normalize({ version: 1, localDate: TrailerPay.localDate(), rateCents: startRateCents,
-            initialTrailer: "", originalMiles: numericValue(prefix + "original"),
+            numeroParadas: TrailerPay.stops(Number(el(prefix + "stops").value)), initialTrailer: "", originalMiles: numericValue(prefix + "original"),
             backhaul: el(prefix + "backhaul").checked, destination: el(prefix + "destination").value.trim(),
             extraDayCents: el(prefix + "extra").checked ? Number(el(prefix + "extraValue").value) : 0,
             storeToBackhaul: 0, backhaulToBase: 0, additionalBackhaulMiles: 0 });
@@ -132,8 +133,10 @@ const PaycheckUI = (() => {
         }
         if (!journey) return;
         const payment = journey.pagamento;
+        if (acceptTarget && el("payStops")) el("payStops").value = TrailerPay.stops(payment?.numeroParadas);
+        if (el("paySaveStops")) el("paySaveStops").disabled = !payment || saving;
         const detentionTotal = TrailerPay.detentionRecords(journey).reduce((sum, entry) => sum + TrailerPay.detentionCents(entry.minutes, entry.rateCents), 0);
-        el("payActiveSummary").textContent = payment ? `${t("payable")}: ${distance(TrailerPay.calculate(payment).payableMiles)} · ${t("preview")}: ${money(TrailerPay.calculate(payment).totalCents + detentionTotal)}` : t("legacy");
+        el("payActiveSummary").textContent = payment ? `${t("payable")}: ${distance(TrailerPay.calculate(payment).payableMiles)} · ${t("preview")}: ${money(TrailerPay.calculate(payment).totalCents + detentionTotal)} · ${t("stops")}: ${TrailerPay.stops(payment.numeroParadas)} · ${t("stopBonus")}: ${money(TrailerPay.calculate(payment).stopBonusCents)}` : t("legacy");
         if (typeof DetentionUI !== "undefined") DetentionUI.mount(el("payActiveDetention"), journey, { activeOnly: true });
         // Preserve draft input while another tab updates the journey.
         if (acceptTarget && el("payAdditional").dataset.journey !== journey.id) {
@@ -161,6 +164,21 @@ const PaycheckUI = (() => {
         } catch (error) { el("payJourneyStatus").textContent = error.message; }
         finally { saving = false; el("paySaveMiles").disabled = false; }
     }
+    async function saveStops(event) {
+        event.preventDefault(); if (saving) return;
+        saving = true; el("paySaveStops").disabled = true;
+        try {
+            const expected = activeId, token = activeToken;
+            const numeroParadas = TrailerPay.stops(Number(el("payStops").value));
+            await TrailerStorage.change(data => {
+                if (!data.jornadaAtiva || data.jornadaAtiva.id !== expected || !data.jornadaAtiva.pagamento) throw Error(t("changed"));
+                TrailerPay.edit(data, expected, { ...data.jornadaAtiva.pagamento, numeroParadas });
+            }, token);
+            active(TrailerStorage.read().data.jornadaAtiva);
+            el("payJourneyStatus").textContent = t("saved");
+        } catch (error) { el("payJourneyStatus").textContent = error.message; }
+        finally { saving = false; el("paySaveStops").disabled = false; }
+    }
     function setup() {
         document.querySelectorAll("[data-pay-language]").forEach(node => node.addEventListener("change", () => {
             language = node.value === "en" ? "en" : "pt";
@@ -169,6 +187,7 @@ const PaycheckUI = (() => {
         }));
         if (el("payStartForm")) {
             form(el("payStartForm"), "startPay");
+            el("payStopsForm").addEventListener("submit", saveStops);
             el("payMilesForm").addEventListener("submit", saveMiles);
             window.addEventListener("trailerpaylanguage", () => {
                 try { active(TrailerStorage.read().data.jornadaAtiva, false); } catch (_) {}
@@ -188,6 +207,7 @@ const PaycheckUI = (() => {
         for (const suffix of ["original", "destination"]) el("startPay" + suffix).value = "";
         for (const suffix of ["backhaul", "extra"]) el("startPay" + suffix).checked = false;
         el("startPayextraValue").selectedIndex = 0;
+        el("startPaystops").value = "1";
         preview("startPay");
     }
     return { t, money, number, distance, translate, form, input, signature, active, startSignature, clearStart, get language() { return language; },

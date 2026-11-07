@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('daily-sync.js', 'utf8');
-const account = '72f4ef27-1c87-46fd-b90b-36f1bcdd008c';
+// Synthetic identity: this test must never identify a production account.
+const account = '10000000-0000-4000-8000-000000000099';
 const environment = 'https://fixture.supabase.co';
 for (const language of ['pt-BR', 'en']) {
     const events = {}, nodes = {};

@@ -14,3 +14,14 @@ release/candidate-*/
 release/final-audit-*/
 release/main-root-preparation-*/
 supabase/.temp/
+
+# Private operations, repair evidence and local publication snapshots.
+/supabase/deployment/
+/release/
+/PAYMENT_ORPHAN_DIAGNOSIS.md
+/tests/teste001-repair-preview.test.cjs
+**/teste001-*.json
+**/*repair-operation*.json
+**/*repair-receipt*.json
+**/*private-manifest*.json
+/_site/

@@ -10,6 +10,7 @@
     <title>Trailer Log - Configurações</title>
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="payments.css">
 
     <style>
         /* CONFIGURAÇÕES - TRAILER LOG */
@@ -305,6 +306,16 @@
 
 
 
+            <section class="secao-config cartao-backup">
+                <h2 data-pay-i18n="settings">Tarifa para novas jornadas</h2>
+                <label><span data-pay-i18n="language">Idioma</span><select data-pay-language><option value="pt">Português</option><option value="en">English</option></select></label>
+                <form id="settingsRateForm" class="pay-grid">
+                    <label><span data-pay-i18n="rate">Valor por milha (US$)</span><input id="settingsRate" type="number" inputmode="decimal" min="0.60" max="1.00" step="0.01" value="0.65" required></label>
+                    <button id="settingsSaveRate" type="submit" data-pay-i18n="saveRate">Salvar tarifa</button>
+                </form>
+                <p data-pay-i18n="rateNote"></p>
+                <p id="settingsRateStatus" role="status" aria-live="polite"></p>
+            </section>
             <!-- GERENCIAMENTO DE DADOS -->
 
             <div class="secao-config">
@@ -564,5 +575,6 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script src="payments-ui.js"></script>
+<script src="payment-settings.js"></script>
 </body>
 </html>

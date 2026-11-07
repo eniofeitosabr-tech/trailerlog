@@ -21,6 +21,8 @@ const TrailerPay = (() => {
         if (!Number.isSafeInteger(value) || value < 1 || value > 100000) fail();
         return value;
     }
+    function newRate(value) { rate(value); if (value < 60 || value > 100) fail(); return value; }
+    function stops(value = 1) { if (!Number.isSafeInteger(value) || value < 1 || value > 5) fail(); return value; }
     function additionalMiles(input) {
         if (input.additionalBackhaulMiles !== undefined) {
             const value = input.additionalBackhaulMiles;
@@ -40,7 +42,8 @@ const TrailerPay = (() => {
             storeToBackhaul: miles(input.storeToBackhaul === undefined && input.additionalBackhaulMiles !== undefined ? 0 : input.storeToBackhaul),
             backhaulToBase: miles(input.backhaulToBase === undefined && input.additionalBackhaulMiles !== undefined ? 0 : input.backhaulToBase),
             backhaul: input.backhaul, destination: input.destination.trim(), extraDayCents: input.extraDayCents,
-            rateCents: rate(input.rateCents), initialTrailer: input.initialTrailer };
+            rateCents: rate(input.rateCents === undefined ? DEFAULT_RATE : input.rateCents), initialTrailer: input.initialTrailer };
+        if (input.numeroParadas !== undefined) payment.numeroParadas = stops(input.numeroParadas);
         // Persist originals and derived payable miles separately; always recompute derived fields.
         if (input.additionalBackhaulMiles !== undefined) payment.additionalBackhaulMiles = additionalMiles(input);
         const additional = Math.round(additionalMiles(payment) * 100);
@@ -86,10 +89,11 @@ const TrailerPay = (() => {
         const payableUnits = (p.backhaul ? originalUnits : originalUnits * 2) + additionalUnits * 2;
         const mileageCents = Math.round(payableUnits * p.rateCents / 200);
         const backhaulCents = p.backhaul ? BACKHAUL : 0;
+        const numeroParadas = stops(p.numeroParadas), additionalStops = numeroParadas - 1, stopBonusCents = additionalStops * 2000;
         return { originalMiles: p.originalMiles, additionalMiles: additionalUnits / 100,
-            payableMiles: payableUnits / 200, mileageCents, backhaulCents,
+            payableMiles: payableUnits / 200, mileageCents, backhaulCents, numeroParadas, additionalStops, stopBonusCents,
             extraDayCents: p.extraDayCents, saturdayCents: 0, sundayCents: 0,
-            totalCents: mileageCents + backhaulCents + p.extraDayCents };
+            totalCents: mileageCents + backhaulCents + p.extraDayCents + stopBonusCents };
     }
     function report(data, from, to) {
         if (!dateValid(from) || !dateValid(to) || from > to) fail();
@@ -102,7 +106,7 @@ const TrailerPay = (() => {
             return { journey, payment, date: payment ? payment.localDate : journey.inicio && Number.isFinite(Date.parse(journey.inicio)) ? localDate(journey.inicio) : null,
                 active: !!data.jornadaAtiva && data.jornadaAtiva.id === journey.id,
                 ...(payment ? calculate(payment) : { originalMiles: 0, additionalMiles: 0, payableMiles: 0,
-                    mileageCents: 0, backhaulCents: 0, extraDayCents: 0, saturdayCents: 0, sundayCents: 0, totalCents: 0 }) };
+                    numeroParadas: 1, additionalStops: 0, stopBonusCents: 0, mileageCents: 0, backhaulCents: 0, extraDayCents: 0, saturdayCents: 0, sundayCents: 0, totalCents: 0 }) };
         }).sort((a, b) => (a.date || "").localeCompare(b.date || "") || String(a.journey.inicio || "").localeCompare(String(b.journey.inicio || "")) || a.journey.id.localeCompare(b.journey.id));
         const days = new Set();
         for (const row of all) {
@@ -113,7 +117,7 @@ const TrailerPay = (() => {
             if (day === 0) row.sundayCents = WEEKEND;
             row.totalCents += row.saturdayCents + row.sundayCents;
         }
-        const fields = ["originalMiles", "additionalMiles", "payableMiles", "mileageCents", "backhaulCents", "extraDayCents", "saturdayCents", "sundayCents", "totalCents"];
+        const fields = ["stopBonusCents", "originalMiles", "additionalMiles", "payableMiles", "mileageCents", "backhaulCents", "extraDayCents", "saturdayCents", "sundayCents", "totalCents"];
         // Mileage/bonuses retain their journey date. Detention uses its own local date.
         for (const row of all) {
             row.paymentIncluded = !!row.date && row.date >= from && row.date <= to;
@@ -200,6 +204,6 @@ const TrailerPay = (() => {
         return true;
     }
     return { DEFAULT_RATE, DEFAULT_DETENTION_RATE, BACKHAUL, WEEKEND, extras, localDate, dateValid, miles, rate,
-        normalize, validateData, create, calculate, report, edit, additionalMiles,
+        normalize, validateData, create, calculate, report, edit, additionalMiles, newRate, stops,
         detentionCents, detention, detentionRecords, findJourney, changeDetention };
 })();

@@ -3,7 +3,7 @@
     const ui = PaycheckUI;
     let current = null, busy = false;
     const fields = { originalMiles: "original", additionalMiles: "additional", payableMiles: "payable", mileageCents: "mileage",
-        backhaulCents: "bonusBackhaul", saturdayCents: "saturday", sundayCents: "sunday", extraDayCents: "extraBonus",
+        stopBonusCents: "stopBonus", backhaulCents: "bonusBackhaul", saturdayCents: "saturday", sundayCents: "sunday", extraDayCents: "extraBonus",
         detentionMinutes: "detentionMinutes", detentionCents: "detentionCents", totalCents: "total" };
     function node(tag, text, parent, className) {
         const item = document.createElement(tag);
@@ -28,7 +28,7 @@
         return new Intl.DateTimeFormat(document.documentElement.lang === "en" ? "en-US" : "pt-BR").format(new Date(value + "T12:00:00"));
     }
     const auditLabels = { localDate: "date", originalMiles: "original", storeToBackhaul: "store", backhaulToBase: "base",
-        backhaul: "backhaul", destination: "destination", extraDayCents: "extraBonus", rateCents: "rate", initialTrailer: "initialTrailer",
+        numeroParadas: "stops", backhaul: "backhaul", destination: "destination", extraDayCents: "extraBonus", rateCents: "rate", initialTrailer: "initialTrailer",
         payableMiles: "payable", additionalBackhaulMiles: "additional", backhaulBonusCents: "bonusBackhaul" };
     function auditValue(field, value) {
         if (value === undefined || value === null || value === "") return "—";
@@ -63,12 +63,13 @@
                 const card = node("article", undefined, list, "pay-card");
                 node("h2", `${dateLabel(row.date)} · ${ui.t("truck")} ${row.journey.truck}`, card);
                 node("p", ui.t(row.active ? "ongoing" : "finished"), card);
+                node("p", ui.t("journey") + ": " + row.journey.id, card, "report-reference");
                 const trailers = new Set([row.payment && row.payment.initialTrailer, row.journey.trailer,
                     ...current.data.trailersSalvos.filter(use => use.jornadaId === row.journey.id).map(use => use.trailer)].filter(Boolean));
                 pairs(card, [[ui.t("trailer"), [...trailers].join(", ") || "—"],
                     [ui.t("destination"), row.payment ? row.payment.destination || "—" : "—"],
                     ...Object.entries(fields).map(([field, label]) => [ui.t(label), format(field, row[field])])]);
-                if (row.payment) pairs(card, [[ui.t("rate"), ui.money(row.payment.rateCents)]]);
+                if (row.payment) pairs(card, [[ui.t("rate"), ui.money(row.payment.rateCents)], [ui.t("stops"), ui.number(row.numeroParadas)], [ui.t("additionalStops"), ui.number(row.additionalStops)]]);
                 else node("p", ui.t("legacy"), card);
                 if (typeof DetentionUI !== "undefined") {
                     if (!row.paymentIncluded) node("p", DetentionUI.t("outside"), card);
@@ -81,6 +82,11 @@
             el("payStatus").textContent = error.message;
         }
     }
+    function clearReport() {
+        current = null;
+        el("payTotals").replaceChildren(); el("payReport").replaceChildren(); el("payTotal").textContent = "—";
+    }
+    window.addEventListener("traileraccountchange", clearReport);
     el("payFilter").addEventListener("submit", event => { event.preventDefault(); el("payStatus").textContent = ""; render(); });
     el("payRateForm").addEventListener("submit", async event => {
         event.preventDefault();
@@ -88,7 +94,7 @@
         try {
             const raw = Number(el("payRate").value);
             TrailerPay.miles(raw);
-            const rateCents = TrailerPay.rate(Math.round(raw * 100));
+            const rateCents = TrailerPay.newRate(Math.round(raw * 100));
             const snapshot = TrailerStorage.read();
             if (!window.confirm(ui.t("confirmRate"))) return;
             busy = true; el("paySaveRate").disabled = true;
@@ -128,5 +134,5 @@
             el("payDetentionRate").value = (snapshot.data.paymentSettings && snapshot.data.paymentSettings.detentionRateCents !== undefined ? snapshot.data.paymentSettings.detentionRateCents : TrailerPay.DEFAULT_DETENTION_RATE) / 100;
         }
         render();
-    }, error => { el("payStatus").textContent = error.message; });
+    }, error => { clearReport(); el("payStatus").textContent = error.message; });
 })();

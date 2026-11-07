@@ -41,14 +41,34 @@ const TrailerDailySync = (() => {
             if (data.paymentSettings) add('payment_settings', account, { rate_cents: data.paymentSettings.rateCents, detention_rate_cents: data.paymentSettings.detentionRateCents, legacy_data: copy(data.paymentSettings) });
             return docs;
         }
+        // A pending/conflicting outbox keeps its raw draft, but a known server tombstone
+        // must immediately stop contributing to history, payments and printed reports.
+        function deletionFence(s) {
+            return Object.keys(s.catalog).filter(name => (name.startsWith('journeys/') || name.startsWith('trailer_uses/')) &&
+                s.catalog[name].user_id === account && s.catalog[name].deleted_at != null).sort();
+        }
+        function visibleData(s) {
+            const data = copy(s.data), deleted = new Set(deletionFence(s)), hiddenIds = new Set();
+            const visible = journey => {
+                if (!deleted.has('journeys/' + journey.registroId)) return true;
+                hiddenIds.add(journey.id); return false;
+            };
+            data.jornadasSalvas = data.jornadasSalvas.filter(visible);
+            if (data.jornadaAtiva && !visible(data.jornadaAtiva)) data.jornadaAtiva = null;
+            const survivingIds = new Set([...data.jornadasSalvas, ...(data.jornadaAtiva ? [data.jornadaAtiva] : [])].map(j => j.id));
+            data.trailersSalvos = data.trailersSalvos.filter(use => !deleted.has('trailer_uses/' + use.registroId) &&
+                !(hiddenIds.has(use.jornadaId) && !survivingIds.has(use.jornadaId)));
+            return data;
+        }
+        const stateToken = s => hash([account, environment, s.data, deletionFence(s)]);
         function snapshot() {
-            const s = load(); return { data: copy(s.data), storedData: copy(s.data), token: hash([account, environment, s.data]), revision: s.revision, conflict: false };
+            const s = load(); return { data: visibleData(s), storedData: copy(s.data), token: stateToken(s), revision: s.revision, conflict: false };
         }
         async function change(update, token) {
             return locked(s => {
                 if (!s.initialized) error('daily_initial_read_required');
                 if (s.queue.some(q => q.conflict)) error('daily_conflict_requires_review');
-                if (token !== undefined && token !== hash([account, environment, s.data])) error('daily_local_conflict');
+                if (token !== undefined && token !== stateToken(s)) error('daily_local_conflict');
                 const before = documents(s.data), next = copy(s.data); update(next); identify(next); validate(next);
                 const after = documents(next), additions = [];
                 for (const name of new Set([...Object.keys(before), ...Object.keys(after)])) {
@@ -115,8 +135,8 @@ const TrailerDailySync = (() => {
                 }
             }
             await locked(s => {
-                const before = JSON.stringify(s.data); s.catalog = catalog; s.cursor = cursor; s.generation = generation; s.initialized = true;
-                publishCatalog(s); s.error = null; s.status = s.queue.length ? (s.queue[0].conflict ? 'conflict' : 'pending') : 'ready'; save(s); notify(before !== JSON.stringify(s.data));
+                const before = JSON.stringify(visibleData(s)); s.catalog = catalog; s.cursor = cursor; s.generation = generation; s.initialized = true;
+                publishCatalog(s); s.error = null; s.status = s.queue.length ? (s.queue[0].conflict ? 'conflict' : 'pending') : 'ready'; save(s); notify(before !== JSON.stringify(visibleData(s)));
             });
         }
         async function sync() {

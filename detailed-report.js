@@ -12,7 +12,7 @@ const DetailedReport = (() => {
             trailerHistory: "Histórico de registros e trocas de trailer", truckHistory: "Histórico registrado de caminhões e trocas",
             destination: "Loja ou destino registrado", backhaul: "Empresa do Backhaul", status: "Estado", active: "Ativa", finished: "Finalizada",
             originalMiles: "Milhas originais", initialMiles: "Milhas iniciais pagáveis", additionalMiles: "Milhas adicionais do Backhaul", payableMiles: "Total de milhas pagáveis",
-            rate: "Tarifa histórica por milha", mileageCents: "Valor das milhas", backhaulCents: "Bônus de backhaul", saturdayCents: "Bônus de sábado",
+            stops: "Número de paradas", additionalStops: "Paradas adicionais remuneradas", stopBonusCents: "Bônus por paradas", rate: "Tarifa histórica por milha", mileageCents: "Valor das milhas", backhaulCents: "Bônus de backhaul", saturdayCents: "Bônus de sábado",
             sundayCents: "Bônus de domingo", extraDayCents: "Dia Extra — valor selecionado", detention: "Registros de detenção", detentionDate: "Data da detenção",
             detentionMinutes: "Detenção remunerada", hourlyRate: "Tarifa histórica por hora", amount: "Valor", detentionCents: "Total de detenção",
             totalCents: "TOTAL BRUTO ESTIMADO", unknown: "Não informado", empty: "Nenhuma jornada neste período.", noDetention: "Nenhuma detenção registrada neste período.",
@@ -30,7 +30,7 @@ const DetailedReport = (() => {
             truck: "Truck", initialTrailer: "Initial trailer", allTrailers: "All trailers used", trailerHistory: "Trailer records and change history",
             truckHistory: "Recorded truck and change history", destination: "Recorded store or destination", backhaul: "Backhaul Company", status: "Status", active: "Active", finished: "Completed",
             originalMiles: "Original miles", initialMiles: "Initial payable miles", additionalMiles: "Additional Backhaul Miles", payableMiles: "Total payable miles",
-            rate: "Historical rate per mile", mileageCents: "Mileage pay", backhaulCents: "Backhaul bonus", saturdayCents: "Saturday bonus",
+            stops: "Number of stops", additionalStops: "Paid additional stops", stopBonusCents: "Stop bonus", rate: "Historical rate per mile", mileageCents: "Mileage pay", backhaulCents: "Backhaul bonus", saturdayCents: "Saturday bonus",
             sundayCents: "Sunday bonus", extraDayCents: "Extra Day — selected amount", detention: "Detention records", detentionDate: "Detention date",
             detentionMinutes: "Paid detention", hourlyRate: "Historical hourly rate", amount: "Amount", detentionCents: "Detention total",
             totalCents: "ESTIMATED GROSS TOTAL", unknown: "Not provided", empty: "No journeys in this period.", noDetention: "No detention recorded in this period.",
@@ -180,7 +180,8 @@ const DetailedReport = (() => {
                 [t("additionalMiles"), distance(row.payment ? TrailerPay.additionalMiles(row.payment) : null), "—", "—"],
                 [t("payableMiles"), distance(row.payment ? row.payableMiles : null), money(row.payment ? row.payment.rateCents : null), money(row.payment ? row.mileageCents : null)]
             ], "mileage-table");
-            table(section(card, "bonuses"), ["category", "amount"], ["backhaulCents", "saturdayCents", "sundayCents", "extraDayCents"].map(key => [t(key), money(row.payment ? row[key] : null)]), "amount-table");
+            if (row.payment) pairs(card, [["stops", ui.number(row.numeroParadas)], ["additionalStops", ui.number(row.additionalStops)]]);
+            table(section(card, "bonuses"), ["category", "amount"], ["stopBonusCents", "backhaulCents", "saturdayCents", "sundayCents", "extraDayCents"].map(key => [t(key), money(row.payment ? row[key] : null)]), "amount-table");
             const detained = section(card, "detention");
             if (!row.detentions.length) node("p", t("noDetention"), detained);
             else table(detained, ["detentionDate", "detentionMinutes", "hourlyRate", "amount"], [...row.detentions].sort((a,b)=>a.localDate.localeCompare(b.localDate)).map(entry => [
@@ -195,7 +196,7 @@ const DetailedReport = (() => {
         pairs(closing, [["journeys", String(report.rows.length)], ["trucks", report.trucks.join(", ") || null], ["trailers", report.trailers.join(", ") || null],
             ["originalMiles", distance(report.totals.originalMiles)], ["additionalMiles", distance(report.totals.additionalMiles)], ["payableMiles", distance(report.totals.payableMiles)],
             ["backhauls", String(report.backhauls)], ["detentionMinutes", duration(report.totals.detentionMinutes)]]);
-        table(closing, ["category", "amount"], ["mileageCents", "backhaulCents", "saturdayCents", "sundayCents", "extraDayCents", "detentionCents"].map(key => [t(key), money(report.totals[key])]), "amount-table");
+        table(closing, ["category", "amount"], ["mileageCents", "stopBonusCents", "backhaulCents", "saturdayCents", "sundayCents", "extraDayCents", "detentionCents"].map(key => [t(key), money(report.totals[key])]), "amount-table");
         const total = node("div", undefined, closing, "detailed-total report-grand-total"); node("span", t("totalCents"), total); node("strong", money(report.totals.totalCents), total);
     }
     return { build, render, t, backhaulCompanies };
