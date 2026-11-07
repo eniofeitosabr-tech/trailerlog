@@ -66,6 +66,8 @@
             margin-bottom: 24px;
         }
 
+        .area-pesquisa[hidden] { display: none !important; }
+
         .area-pesquisa label {
             display: block;
             font-weight: 600;
@@ -448,7 +450,7 @@
 
             <!-- PESQUISA -->
 
-            <div class="area-pesquisa">
+            <div class="area-pesquisa" id="pesquisaNumeroHistorico">
 
                 <label
                     for="campoPesquisa"
@@ -469,10 +471,6 @@
                 <label for="dataPesquisa" data-history-i18n="day">Dia de início da jornada</label>
                 <input type="date" id="dataPesquisa" onchange="mostrarHistorico()">
                 <button type="button" onclick="limparDataHistorico()" data-history-i18n="clearDate">Limpar data</button>
-                <div id="filtroTrailerJornada" hidden>
-                    <label for="trailerPesquisa" data-history-i18n="trailerFilter">Pesquisar Trailer</label>
-                    <input type="text" id="trailerPesquisa" autocomplete="off" oninput="mostrarHistorico()">
-                </div>
             </div>
             <p id="historicoStatus" role="status" aria-live="polite"></p>
             <!-- RESULTADOS -->
@@ -687,7 +685,7 @@ function selecionarAba(tipo) {
 
     pesquisa.value = "";
     document.getElementById("abaJornadas").classList.toggle("aba-ativa", tipo === "journey");
-    document.getElementById("filtroTrailerJornada").hidden = tipo !== "journey";
+    document.getElementById("pesquisaNumeroHistorico").hidden = tipo === "journey";
 
     if (tipo === "trailer") {
 
@@ -736,7 +734,7 @@ function mostrarHistorico(snapshot) {
     try { TrailerAuth.scope(); snapshotHistorico = snapshot && snapshot.data ? snapshot : TrailerStorage.read(); }
     catch (error) { snapshotHistorico = null; mostrarMensagem("Não foi possível carregar o histórico", error.message); return; }
 
-    const pesquisa = document
+    const pesquisa = tipoHistorico === "journey" ? "" : document
         .getElementById("campoPesquisa")
         .value.trim();
 
@@ -914,11 +912,8 @@ function mostrarHistoricoTruck(numero) {
 
     const jornadasDoTruck = jornadas
         .filter(jornada =>
-            (!numero || String(jornada.truck || "").trim() === numero) && correspondeDiaHistorico(jornada.inicio) &&
-            (tipoHistorico !== "journey" || !document.getElementById("trailerPesquisa").value.trim() ||
-                [jornada.trailer, jornada.pagamento?.initialTrailer, ...trailers.filter(use => use.jornadaId === jornada.id).map(use => use.trailer)]
-                    .includes(document.getElementById("trailerPesquisa").value.trim())) &&
-            (tipoHistorico !== "journey" || jornadaAtiva?.id !== jornada.id)
+            (tipoHistorico === "journey" || !numero || String(jornada.truck || "").trim() === numero) &&
+            correspondeDiaHistorico(jornada.inicio)
         )
         .filter((jornada, index, lista) =>
             lista.findIndex(outro =>
