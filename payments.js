@@ -44,6 +44,11 @@ const TrailerPay = (() => {
             backhaul: input.backhaul, destination: input.destination.trim(), extraDayCents: input.extraDayCents,
             rateCents: rate(input.rateCents === undefined ? DEFAULT_RATE : input.rateCents), initialTrailer: input.initialTrailer };
         if (input.numeroParadas !== undefined) payment.numeroParadas = stops(input.numeroParadas);
+        // Only new payments opt in; unmarked historical payments keep their original calculation.
+        if (input.mileageMinimumVersion !== undefined) {
+            if (input.mileageMinimumVersion !== 1) fail();
+            payment.mileageMinimumVersion = 1;
+        }
         // Persist originals and derived payable miles separately; always recompute derived fields.
         if (input.additionalBackhaulMiles !== undefined) payment.additionalBackhaulMiles = additionalMiles(input);
         const additional = Math.round(additionalMiles(payment) * 100);
@@ -79,6 +84,7 @@ const TrailerPay = (() => {
     }
     function create(input, journey, settings) {
         return normalize({ ...input, version: 1, localDate: localDate(journey.inicio),
+            mileageMinimumVersion: 1,
             rateCents: settings ? rate(settings.rateCents) : DEFAULT_RATE, initialTrailer: journey.trailer || "" });
     }
     function calculate(payment) {
@@ -87,7 +93,9 @@ const TrailerPay = (() => {
         const originalUnits = Math.round(p.originalMiles * 100);
         const additionalUnits = Math.round(additionalMiles(p) * 100);
         const payableUnits = (p.backhaul ? originalUnits : originalUnits * 2) + additionalUnits * 2;
-        const mileageCents = Math.round(payableUnits * p.rateCents / 200);
+        const normalMileageCents = Math.round(payableUnits * p.rateCents / 200);
+        const mileageCents = p.mileageMinimumVersion === 1 && payableUnits <= 96 * 200 && normalMileageCents < 4500
+            ? 4500 : normalMileageCents;
         const backhaulCents = p.backhaul ? BACKHAUL : 0;
         const numeroParadas = stops(p.numeroParadas), additionalStops = numeroParadas - 1, stopBonusCents = additionalStops * 2000;
         return { originalMiles: p.originalMiles, additionalMiles: additionalUnits / 100,

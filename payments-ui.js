@@ -97,7 +97,7 @@ const PaycheckUI = (() => {
         return additional ? TrailerPay.additionalMiles({ additionalBackhaulMiles: Number(value) }) : TrailerPay.miles(Number(value));
     }
     function input(prefix) {
-        return TrailerPay.normalize({ version: 1, localDate: TrailerPay.localDate(), rateCents: startRateCents,
+        return TrailerPay.normalize({ version: 1, mileageMinimumVersion: 1, localDate: TrailerPay.localDate(), rateCents: startRateCents,
             numeroParadas: TrailerPay.stops(Number(el(prefix + "stops").value)), initialTrailer: "", originalMiles: numericValue(prefix + "original"),
             backhaul: el(prefix + "backhaul").checked, destination: el(prefix + "destination").value.trim(),
             extraDayCents: el(prefix + "extra").checked ? Number(el(prefix + "extraValue").value) : 0,
