@@ -155,22 +155,32 @@ async function main() {
             }).then(()=>true)`);
             await client.open('historico.html');
             await client.waitFor('!!document.getElementById("abaJornadas") && !!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden');
+            const today = await client.evaluate('diaLocalHistorico(new Date())');
+            assert.equal(await client.evaluate('document.getElementById("dataPesquisa").value'),today);
+            assert.equal(await client.evaluate('document.getElementById("dataPesquisaAte").value'),today);
+            await client.evaluate('limparDataHistorico();true');
             await client.evaluate('selecionarAba("journey");true');
             assert.equal(await client.evaluate('document.querySelectorAll("[onclick^=excluirJornada]").length'),2);
-            await client.evaluate('document.getElementById("campoPesquisa").value="TEST";document.getElementById("dataPesquisa").value="2026-11-02";mostrarHistorico();true');
+            await client.evaluate('document.getElementById("campoPesquisa").value="TEST";document.getElementById("dataPesquisa").value="2026-11-02";document.getElementById("dataPesquisaAte").value="2026-11-03";mostrarHistorico();true');
+            assert.equal(await client.evaluate('document.querySelectorAll("[onclick^=excluirJornada]").length'),2);
+            await client.evaluate('document.getElementById("dataPesquisaAte").value="2026-11-02";mostrarHistorico();true');
             assert.equal(await client.evaluate('document.querySelectorAll("[onclick^=excluirJornada]").length'),1);
             for(const lang of ['pt','en'])for(const dark of [false,true])for(const width of [320,1920]){
                 await client.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===320});
                 await client.evaluate('var control=document.querySelector("[data-pay-language]");control.value="'+lang+'";control.dispatchEvent(new Event("change"));if(document.body.classList.contains("dark-mode")!=='+dark+')TrailerTheme.toggle();true');
                 assert(await client.evaluate('document.documentElement.scrollWidth<=innerWidth'),'history fits '+width);
                 assert.equal(await client.evaluate('document.getElementById("dataPesquisa").value'),'2026-11-02');
+                assert.equal(await client.evaluate('document.getElementById("dataPesquisaAte").value'),'2026-11-02');
                 assert.equal(await client.evaluate('document.querySelector("[onclick^=excluirJornada]").textContent'),lang==='en'?'Delete journey':'Excluir jornada');
             }
             await client.evaluate('window.confirm=message=>{window.fixtureConfirmation=message;return false};document.querySelector("[onclick^=excluirJornada]").click();true');
             assert.equal(await client.evaluate('TrailerStorage.read().data.jornadasSalvas.length'),2);
             assert(await client.evaluate('fixtureConfirmation.includes("delete-fixture") && fixtureConfirmation.includes("TEST") && fixtureConfirmation.includes("2026")'));
             // Removing the last visit must be explicitly described as keeping payment.
-            await client.evaluate('selecionarAba("trailer");document.getElementById("campoPesquisa").value="T2";mostrarHistorico();true');
+            for (const number of ['T2','t2']) {
+                await client.evaluate(`selecionarAba('trailer');document.getElementById('campoPesquisa').value='${number}';mostrarHistorico();true`);
+                assert.equal(await client.evaluate('document.querySelectorAll("[onclick^=excluirTrailer]").length'),1);
+            }
             assert(await client.evaluate('document.getElementById("historico").textContent.includes("keeps payment")'));
             assert(await client.evaluate('document.getElementById("historico").textContent.includes("Delete journey and payment")'));
             await client.evaluate('window.confirm=()=>true;excluirTrailer(0).then(()=>true)');
@@ -182,6 +192,7 @@ async function main() {
             assert.equal(await client.evaluate('TrailerStorage.read().data.trailersSalvos.length'),2);
             assert.equal(await client.evaluate('TrailerStorage.read().data.trucksCadastrados.length'),1);
             await client.evaluate('limparDataHistorico();true');
+            assert.equal(await client.evaluate('document.getElementById("dataPesquisaAte").value'),'');
             assert.equal(await client.evaluate('document.querySelectorAll("[onclick^=excluirJornada]").length'),1);
             await client.open('paycheck.html');
             await client.waitFor('!!document.getElementById("payFilter") && !!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden');

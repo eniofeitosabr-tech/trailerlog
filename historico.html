@@ -468,9 +468,11 @@
             </div>
 
             <div class="area-pesquisa filtros-jornada">
-                <label for="dataPesquisa" data-history-i18n="day">Dia de início da jornada</label>
+                <label for="dataPesquisa" data-history-i18n="from">De</label>
                 <input type="date" id="dataPesquisa" onchange="mostrarHistorico()">
-                <button type="button" onclick="limparDataHistorico()" data-history-i18n="clearDate">Limpar data</button>
+                <label for="dataPesquisaAte" data-history-i18n="to">Até</label>
+                <input type="date" id="dataPesquisaAte" onchange="mostrarHistorico()">
+                <button type="button" onclick="limparDataHistorico()" data-history-i18n="clearDate">Limpar datas</button>
             </div>
             <p id="historicoStatus" role="status" aria-live="polite"></p>
             <!-- RESULTADOS -->
@@ -502,6 +504,7 @@
 <script src="sha256.js"></script>
 <script src="payments.js"></script>
 <script src="daily-sync.js"></script><script src="storage.js"></script>
+<script src="equipment-history.js"></script>
 <script>
 
 // ==================================
@@ -510,14 +513,14 @@
 
 let tipoHistorico = "trailer";
 const textosHistorico = {
-    pt: { journeys: "Jornadas", day: "Dia de início da jornada", clearDate: "Limpar data", trailerFilter: "Pesquisar Trailer",
+    pt: { journeys: "Jornadas", from: "De", to: "Até", day: "Dia de início da jornada", clearDate: "Limpar datas", trailerFilter: "Pesquisar Trailer",
         truckFilter: "Pesquisar Caminhão", truckHint: "Digite o número do Caminhão", trailerHint: "Digite o número do Trailer",
         visitRemove: "Excluir utilização (mantém pagamento)", visitNote: "Excluir uma utilização mantém a jornada e seu pagamento. Para removê-los, use Excluir jornada e pagamento.", removeWithPay: "Excluir jornada e pagamento", visitConfirm: "Excluir somente esta utilização do trailer? A jornada, seu pagamento e as detenções serão mantidos.", visitDeleted: "Utilização excluída. Jornada e pagamento mantidos.", remove: "Excluir jornada", deleted: "Jornada excluída. Pagamentos e totais atualizados.",
         confirm: "Excluir definitivamente esta jornada e seus registros vinculados de trailers, pagamentos e detenções?",
         irreversible: "Esta ação não poderá ser desfeita.", changed: "A jornada foi alterada ou excluída. Atualize a pesquisa antes de tentar novamente.",
         empty: "Nenhuma jornada encontrada", none: "Confira os filtros de caminhão, trailer e dia.", all: "Todos os caminhões",
         unknown: "Não informada", journey: "Jornada", truck: "Caminhão", truckNumber: "Número do Caminhão", condition: "Condição do Caminhão", startDate: "Data de Início", startTime: "Hora de Início", endDate: "Data de Término", endTime: "Hora de Término", trailers: "Trailers Utilizados", uses: "Utilizações de Trailers", notes: "Observações do Caminhão", noTrailer: "Nenhum Trailer registrado", noNotes: "Nenhuma", countOne: "Jornada identificada no sistema", countMany: "Jornadas identificadas no sistema", start: "Início", finished: "Finalizada", active: "Em andamento" },
-    en: { journeys: "Journeys", day: "Journey start day", clearDate: "Clear date", trailerFilter: "Search Trailer",
+    en: { journeys: "Journeys", from: "From", to: "To", day: "Journey start day", clearDate: "Clear dates", trailerFilter: "Search Trailer",
         truckFilter: "Search Truck", truckHint: "Enter the Truck number", trailerHint: "Enter the Trailer number",
         visitRemove: "Delete visit (keeps payment)", visitNote: "Deleting a visit keeps the journey and its payment. To remove them, use Delete journey and payment.", removeWithPay: "Delete journey and payment", visitConfirm: "Delete only this trailer visit? The journey, its payment and detentions will be kept.", visitDeleted: "Visit deleted. Journey and payment kept.", remove: "Delete journey", deleted: "Journey deleted. Payments and totals updated.",
         confirm: "Permanently delete this journey and its linked trailer records, payments and detentions?",
@@ -537,16 +540,24 @@ function traduzirHistorico() {
 }
 function diaLocalHistorico(value) {
     if (!value) return null;
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
     const date = new Date(value);
     if (!Number.isFinite(date.getTime())) return null;
     return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
 }
 function correspondeDiaHistorico(value) {
-    const selected = document.getElementById("dataPesquisa").value;
-    return !selected || diaLocalHistorico(value) === selected;
+    const from = document.getElementById("dataPesquisa").value;
+    const to = document.getElementById("dataPesquisaAte").value;
+    if (!from && !to) return true;
+    const day = diaLocalHistorico(value);
+    return !!day && (!from || day >= from) && (!to || day <= to);
+}
+function temDatasHistorico() {
+    return !!(document.getElementById("dataPesquisa").value || document.getElementById("dataPesquisaAte").value);
 }
 function limparDataHistorico() {
     document.getElementById("dataPesquisa").value = "";
+    document.getElementById("dataPesquisaAte").value = "";
     mostrarHistorico();
 }
 let exclusaoJornadaEmAndamento = false;
@@ -745,7 +756,7 @@ function mostrarHistorico(snapshot) {
 
     // COMEÇAR COM A TELA LIMPA
 
-    if (pesquisa === "" && !document.getElementById("dataPesquisa").value && tipoHistorico !== "journey") {
+    if (pesquisa === "" && !temDatasHistorico() && tipoHistorico !== "journey") {
 
         mostrarMensagem(
             "Pesquise por um número",
@@ -782,7 +793,7 @@ function mostrarHistoricoTrailer(numero) {
     const registros = trailers
         .map((item, index) => ({ item, index }))
         .filter(registro =>
-            (!numero || String(registro.item.trailer || "").trim() === numero) && correspondeDiaHistorico(registro.item.jornadaId ? [...carregarLista("jornadasSalvas"), ...(carregarJornadaAtiva() ? [carregarJornadaAtiva()] : [])].find(j => j.id === registro.item.jornadaId)?.inicio : registro.item.data)
+            (!numero || EquipmentHistory.sameTrailer(registro.item.trailer, numero)) && correspondeDiaHistorico(registro.item.jornadaId ? EquipmentHistory.uniqueJourney([...carregarLista("jornadasSalvas"), ...(carregarJornadaAtiva() ? [carregarJornadaAtiva()] : [])], registro.item.jornadaId)?.inicio || registro.item.data : registro.item.data)
         )
         .reverse();
 
@@ -813,7 +824,8 @@ function mostrarHistoricoTrailer(numero) {
     `;
 
     registros.forEach(({item, index}) => {
-        const linkedIndex = carregarLista("jornadasSalvas").findIndex(j => j.id === item.jornadaId);
+        const unique = EquipmentHistory.uniqueJourney(carregarLista("jornadasSalvas"), item.jornadaId);
+        const linkedIndex = unique ? carregarLista("jornadasSalvas").indexOf(unique) : -1;
         const linked = linkedIndex < 0 ? null : carregarLista("jornadasSalvas")[linkedIndex];
         const canDeleteJourney = linked && linked.status !== "Em andamento" && carregarJornadaAtiva()?.id !== linked.id;
 
@@ -941,7 +953,7 @@ function mostrarHistoricoTruck(numero) {
     if (
         jornadasDoTruck.length === 0 &&
         registrosAntigos.length === 0 &&
-        !cadastro && tipoHistorico !== "journey" && !document.getElementById("dataPesquisa").value
+        !cadastro && tipoHistorico !== "journey" && !temDatasHistorico()
     ) {
 
         mostrarMensagem(
@@ -952,7 +964,7 @@ function mostrarHistoricoTruck(numero) {
         return;
     }
 
-    if ((tipoHistorico === "journey" || document.getElementById("dataPesquisa").value) && !jornadasDoTruck.length && !registrosAntigos.length) {
+    if ((tipoHistorico === "journey" || temDatasHistorico()) && !jornadasDoTruck.length && !registrosAntigos.length) {
         mostrarMensagem(textoHistorico("empty"), textoHistorico("none")); return;
     }
     let html = `
@@ -975,7 +987,7 @@ function mostrarHistoricoTruck(numero) {
 
     // MOSTRAR CADASTRO, SE EXISTIR
 
-    if (cadastro && jornadasDoTruck.length === 0 && !document.getElementById("dataPesquisa").value && tipoHistorico !== "journey") {
+    if (cadastro && jornadasDoTruck.length === 0 && !temDatasHistorico() && tipoHistorico !== "journey") {
 
         html += `
             <div class="registro-historico truck">
@@ -1195,6 +1207,9 @@ async function excluirTrailer(index) {
 // ==================================
 
 document.addEventListener("DOMContentLoaded", function() {
+    const today = diaLocalHistorico(new Date());
+    document.getElementById("dataPesquisa").value = today;
+    document.getElementById("dataPesquisaAte").value = today;
     TrailerStorage.subscribe((current, external, dataChanged) => {
         if (dataChanged) mostrarHistorico(current);
     }, error => {

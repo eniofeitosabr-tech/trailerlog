@@ -29,6 +29,7 @@ const context = vm.createContext({
     TrailerAuth: { scope: () => 'synthetic-owner' },
     TrailerStorage: { read: () => ({ data, token: 'synthetic-token' }), change() { throw Error('Filtering must not write'); } }
 });
+vm.runInContext(fs.readFileSync(path.join(root, 'equipment-history.js'), 'utf8'), context);
 vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], context);
 const run = code => vm.runInContext(code, context);
 const cards = () => (element('historico').innerHTML.match(/class="registro-historico truck"/g) || []).length;
@@ -40,12 +41,13 @@ assert.equal(cards(), 3, 'All saved and active journeys are visible without a da
 assert.equal(deletes(), 2, 'Only the two finalized journeys offer deletion');
 element('campoPesquisa').value = 'must-not-filter-journeys';
 element('dataPesquisa').value = '2026-11-02';
+element('dataPesquisaAte').value = '2026-11-02';
 run('mostrarHistorico()');
 assert.equal(cards(), 2); assert.equal(deletes(), 1);
 assert(!element('historico').innerHTML.includes('T-second'));
-element('dataPesquisa').value = '2026-11-03'; run('mostrarHistorico()');
+element('dataPesquisa').value = '2026-11-03'; element('dataPesquisaAte').value = '2026-11-03'; run('mostrarHistorico()');
 assert.equal(cards(), 1); assert.equal(deletes(), 1);
-element('dataPesquisa').value = '2026-11-05'; run('mostrarHistorico()');
+element('dataPesquisa').value = '2026-11-05'; element('dataPesquisaAte').value = '2026-11-05'; run('mostrarHistorico()');
 assert.equal(cards(), 0);
 run('limparDataHistorico()'); assert.equal(cards(), 3);
 for (const language of ['pt', 'en']) {

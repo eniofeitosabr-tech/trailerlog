@@ -15,14 +15,14 @@ async function main(){
  read:()=>({data:clone(data),token}),
  async change(fn,expected){assert.equal(owner,'account-A');if(expected!==token)throw Error('stale snapshot');const next=clone(data);fn(next);data=next;token++;writes++}
  }});
- vm.runInContext(read('payments.js'),c);vm.runInContext(read('historico.html').match(/<script>([\s\S]*?)<\/script>/)[1],c);
+ vm.runInContext(read('payments.js'),c);vm.runInContext(read('equipment-history.js'),c);vm.runInContext(read('historico.html').match(/<script>([\s\S]*?)<\/script>/)[1],c);
  const run=s=>vm.runInContext(s,c);
  // Journey view includes the active journey, protects it from deletion and filters only by day.
  run('selecionarAba("journey")');assert.equal((get('historico').innerHTML.match(/onclick="excluirJornada/g)||[]).length,3);assert(get('historico').innerHTML.includes('Em andamento'));
- get('campoPesquisa').value='A';get('dataPesquisa').value='2026-11-02';run('mostrarHistorico()');
+ get('campoPesquisa').value='A';get('dataPesquisa').value='2026-11-02';get('dataPesquisaAte').value='2026-11-02';run('mostrarHistorico()');
  assert.equal((get('historico').innerHTML.match(/onclick="excluirJornada/g)||[]).length,2);
  assert(!read('historico.html').includes('trailerPesquisa'));
- get('dataPesquisa').value='2026-11-05';run('mostrarHistorico()');assert(get('historico').innerHTML.includes('Nenhuma jornada encontrada'));
+ get('dataPesquisa').value='2026-11-05';get('dataPesquisaAte').value='2026-11-05';run('mostrarHistorico()');assert(get('historico').innerHTML.includes('Nenhuma jornada encontrada'));
  run('limparDataHistorico()');assert.equal(get('dataPesquisa').value,'');assert.equal((get('historico').innerHTML.match(/onclick="excluirJornada/g)||[]).length,3);
  assert.equal(run('diaLocalHistorico("invalid")'),null);
  c.PaycheckUI.language='en';events.trailerpaylanguage();assert.equal(get('labelPesquisa').textContent,'Search Truck');assert(get('historico').innerHTML.includes('Delete journey'));

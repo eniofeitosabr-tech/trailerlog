@@ -1,5 +1,13 @@
 /* Read-only equipment summary from the authorized pre-save transaction snapshot. */
 const EquipmentHistory = (() => {
+    const trailerKey = value => typeof value === "string" ? value.trim().toLowerCase() : "";
+    const sameTrailer = (a, b) => !!trailerKey(a) && trailerKey(a) === trailerKey(b);
+    const distinctTrailers = values => [...new Map(values.filter(value => trailerKey(value)).map(value => [trailerKey(value), value])).values()];
+    const uniqueJourney = (journeys, id) => {
+        if (!id) return null;
+        const matches = journeys.filter(journey => journey.id === id);
+        return matches.length === 1 ? matches[0] : null;
+    };
     const text = value => typeof value === "string" && value.trim() ? value.trim() : null;
     const first = (...values) => values.map(text).find(Boolean) || null;
     const time = value => text(value) && Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
@@ -9,7 +17,7 @@ const EquipmentHistory = (() => {
             if (!journeys.has(j.id)) journeys.set(j.id, j);
         const uses = data.trailersSalvos;
         function linkedJourney(use) {
-            if (use.jornadaId) return journeys.get(use.jornadaId) || null;
+            if (use.jornadaId) return uniqueJourney([...data.jornadasSalvas, ...(data.jornadaAtiva ? [data.jornadaAtiva] : [])], use.jornadaId);
             // Only an unambiguous recorded interval can identify a legacy mirror.
             const candidates = [...journeys.values()].filter(j => j.truck === use.truck && time(j.inicio) !== null && time(use.data) !== null &&
                 (time(j.inicio) === time(use.data) || time(j.fim) !== null && time(use.data) >= time(j.inicio) && time(use.data) <= time(j.fim)));
@@ -19,7 +27,7 @@ const EquipmentHistory = (() => {
         for (const use of uses) {
             const linked = linkedJourney(use); associations.set(use, linked);
             const id = use.jornadaId || linked?.id;
-            if (id) { if (!representedTrailers.has(id)) representedTrailers.set(id,new Set()); representedTrailers.get(id).add(use.trailer); }
+            if (id) { if (!representedTrailers.has(id)) representedTrailers.set(id,new Set()); representedTrailers.get(id).add(trailerKey(use.trailer)); }
         }
         function equipment(number, kind) {
             const entries = new Map();
@@ -34,10 +42,11 @@ const EquipmentHistory = (() => {
             }
             for (const use of [...uses].sort((a,b)=>(time(a.data)??-Infinity)-(time(b.data)??-Infinity))) {
                 const mirror = associations.get(use);
-                if ((kind === "truck" ? first(use.truck,mirror && mirror.truck) : use.trailer) !== number) continue;
+                if (kind === "truck" ? first(use.truck,mirror && mirror.truck) !== number : !sameTrailer(use.trailer, number)) continue;
                 const journeyKey = mirror ? mirror.id : use.jornadaId;
                 const key = kind === "truck" && journeyKey ? "journey:" + journeyKey :
-                    "use:" + JSON.stringify([journeyKey || null, kind === "truck" ? use.truck : use.trailer, time(use.data) ?? use.registroId ?? JSON.stringify(use)]);
+                    "use:" + JSON.stringify([journeyKey || null, kind === "truck" ? use.truck : trailerKey(use.trailer),
+                        kind === "trailer" && !journeyKey ? use.registroId || JSON.stringify(use) : time(use.data) ?? use.registroId ?? JSON.stringify(use)]);
                 add(key, use.data, kind === "truck" ? first(use.estadoTruck, use.condicaoTruck) : first(use.estado, use.condicaoTrailer, use.trailerCondition),
                     kind === "trailer" ? first(use.condicaoCarga, use.condition) : null);
             }
@@ -46,11 +55,11 @@ const EquipmentHistory = (() => {
                     if (j.truck === number) add("journey:" + j.id, j.inicio, first(j.condicaoTruck, j.estadoTruck), null);
                 } else {
                     const initial = first(j.pagamento && j.pagamento.initialTrailer, j.initialTrailer, j.trailerInicial);
-                    if (j.trailer !== number && initial !== number) continue;
-                    const represented = representedTrailers.get(j.id)?.has(number);
+                    if (!sameTrailer(j.trailer, number) && !sameTrailer(initial, number)) continue;
+                    const represented = representedTrailers.get(j.id)?.has(trailerKey(number));
                     if (!represented) add("journey:" + j.id, j.inicio,
-                        j.trailer === number ? first(j.condicaoTrailer, j.estadoTrailer) : null,
-                        j.trailer === number ? j.condicaoCarga : null);
+                        sameTrailer(j.trailer, number) ? first(j.condicaoTrailer, j.estadoTrailer) : null,
+                        sameTrailer(j.trailer, number) ? j.condicaoCarga : null);
                 }
             }
             const sorted = [...entries.values()].sort((a,b) => (b.at ?? -Infinity) - (a.at ?? -Infinity));
@@ -112,5 +121,5 @@ const EquipmentHistory = (() => {
         window.addEventListener("trailerpaylanguage",()=>{if(current !== undefined)show(current);});
         for (const event of ["traileraccountchange","pagehide","offline"]) window.addEventListener(event,clear);
     }
-    return { summarize, show, clear };
+    return { summarize, show, clear, trailerKey, sameTrailer, distinctTrailers, uniqueJourney };
 })();

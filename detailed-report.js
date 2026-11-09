@@ -79,7 +79,7 @@ const DetailedReport = (() => {
             .filter(entry => entry.truck);
         truckHistory.sort(byTime);
         const initialTrailer = first(p && p.initialTrailer, j.initialTrailer, j.trailerInicial);
-        const trailers = [...new Set([initialTrailer, text(j.trailer), ...trailerHistory.map(entry => entry.trailer)].filter(Boolean))];
+        const trailers = EquipmentHistory.distinctTrailers([initialTrailer, text(j.trailer), ...trailerHistory.map(entry => entry.trailer)]);
         const trucks = [...new Set([text(j.truck), ...truckHistory.map(entry => entry.truck)].filter(Boolean))];
         const start = date(j.inicio), end = date(j.fim);
         const durationMinutes = start && end && end >= start ? Math.floor((end - start) / 60000) : null;
@@ -97,7 +97,7 @@ const DetailedReport = (() => {
             (a.date || "9999").localeCompare(b.date || "9999") || byTime({ at: a.start }, { at: b.start }) || a.journey.id.localeCompare(b.journey.id));
         const all = [...data.jornadasSalvas, ...(data.jornadaAtiva ? [data.jornadaAtiva] : [])];
         return { from, to, issuedAt: new Date().toISOString(), rows, totals: calculated.totals,
-            trucks: [...new Set(rows.flatMap(row => row.trucks))], trailers: [...new Set(rows.flatMap(row => row.trailers))],
+            trucks: [...new Set(rows.flatMap(row => row.trucks))], trailers: EquipmentHistory.distinctTrailers(rows.flatMap(row => row.trailers)),
             backhauls: rows.filter(row => row.paymentIncluded && row.payment && row.payment.backhaul).length,
             hasUndated: all.some(j => !j.pagamento && !date(j.inicio)) };
     }
