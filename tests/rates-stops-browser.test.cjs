@@ -163,6 +163,12 @@ async function main() {
                 await client.open(page);
                 await client.waitFor('document.readyState==="complete" && !!document.querySelector(".app-layout") && !document.querySelector(".app-layout").hidden && location.pathname.endsWith("/'+page+'")');
                 if(page==='paycheck.html'){
+                    assert.equal(await client.evaluate('document.getElementById("payFrom").value'),await client.evaluate('TrailerPay.localDate()'));
+                    assert.equal(await client.evaluate('document.getElementById("payTo").value'),await client.evaluate('TrailerPay.localDate()'));
+                    await client.evaluate('document.getElementById("payFrom").value="2026-10-01";document.getElementById("payTo").value="2026-10-03";document.getElementById("payFilter").requestSubmit();true');
+                    assert.equal(await client.evaluate('document.getElementById("payFrom").value'),'2026-10-01');
+                    await client.evaluate('document.getElementById("payFrom").value="";document.getElementById("payTo").value="";document.getElementById("payFilter").requestSubmit();true');
+                    assert(await client.evaluate('document.getElementById("payFrom").value==="" && document.getElementById("payTo").value===""'));
                     await client.evaluate('var day=TrailerStorage.read().data.jornadaAtiva.pagamento.localDate;document.getElementById("payFrom").value=day;document.getElementById("payTo").value=day;document.getElementById("payFilter").requestSubmit();true');
                     assert(await client.evaluate('document.getElementById("payReport").textContent.includes(PaycheckUI.money(2000))'));
                     assert.equal(await client.evaluate('TrailerPay.report(TrailerStorage.read().data,document.getElementById("payFrom").value,document.getElementById("payTo").value).totals.stopBonusCents'),2000);

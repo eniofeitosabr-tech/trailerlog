@@ -122,7 +122,7 @@
         finally { busy = false; el("paySaveDetentionRate").disabled = false; }
     });
     const today = TrailerPay.localDate();
-    el("payFrom").value = today.slice(0, 8) + "01"; el("payTo").value = today;
+    el("payFrom").value = today; el("payTo").value = today;
     window.addEventListener("trailerpaylanguage", () => { document.title = "Trailer Log · " + ui.t("title"); render(); });
     document.title = "Trailer Log · " + ui.t("title");
     let initialized = false;
