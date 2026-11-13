@@ -3,10 +3,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const source = file => fs.readFileSync(path.join(root, file), 'utf8');
 async function main() {
-    const project = new URL(source('supabase-config.js').match(/url:\s*"([^"]+)"/)[1]).origin;
+    const configuration = { window: {} };
+    vm.runInNewContext(source('supabase-config.js'), configuration, { timeout: 1000 });
+    const project = new URL(configuration.window.TRAILER_SUPABASE_CONFIG.url).origin;
     for (const page of ['login.html', 'cadastro.html', 'recuperar-senha.html', 'nova-senha.html']) {
         const html = source(page);
         const policy = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
