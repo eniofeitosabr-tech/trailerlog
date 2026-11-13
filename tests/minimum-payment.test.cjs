@@ -37,8 +37,20 @@ for (const backhaul of [false,true]) for (let stops=1; stops<=5; stops++) for (c
     assert.equal(p.edit(data,journey.id,JSON.parse(JSON.stringify(payment))),false);
     cases++;
 }
-check(make(100,65,{backhaul:true,destination:'TEST',additionalBackhaulMiles:20}),4550);
-check(make(100,65,{backhaul:true,destination:'TEST',additionalBackhaulMiles:47}),6305);
+check(make(100,65,{backhaul:true,destination:'TEST',additionalBackhaulMiles:20}),5800);
+check(make(100,65,{backhaul:true,destination:'TEST',additionalBackhaulMiles:47}),7555);
+const regression = make(98,65,{backhaul:true,destination:'TEST',additionalBackhaulMiles:72});
+check(regression,9180);
+assert.equal(p.calculate(regression).totalCents,14330);
+assert.equal(p.calculate(make(98,65,{backhaul:true,destination:'TEST'})).totalCents,9650);
+for (const rate of [60,65,80,100]) {
+    for (const originalMiles of [98,150,192,192.02,300]) {
+        const initial = Math.round(originalMiles / 2 * rate);
+        const expected = originalMiles / 2 <= 96 && initial < 4500 ? 4500 + 72 * rate : Math.round((originalMiles / 2 + 72) * rate);
+        check(make(originalMiles,rate,{backhaul:true,destination:'TEST',additionalBackhaulMiles:72}),expected);
+    }
+}
+check(make(98,65,{backhaul:true,destination:'TEST',storeToBackhaul:30,backhaulToBase:42}),9180);
 check(make(0.01,65,{backhaul:true,destination:'TEST'}),4500);
 const old = {...make(17)}; delete old.mileageMinimumVersion;
 check(old,1105);

@@ -94,8 +94,11 @@ const TrailerPay = (() => {
         const additionalUnits = Math.round(additionalMiles(p) * 100);
         const payableUnits = (p.backhaul ? originalUnits : originalUnits * 2) + additionalUnits * 2;
         const normalMileageCents = Math.round(payableUnits * p.rateCents / 200);
-        const mileageCents = p.mileageMinimumVersion === 1 && payableUnits <= 96 * 200 && normalMileageCents < 4500
-            ? 4500 : normalMileageCents;
+        // Return miles must not consume the minimum guaranteed for the initial backhaul leg.
+        const minimumUnits = p.backhaul ? originalUnits : payableUnits;
+        const initialMileageCents = Math.round(minimumUnits * p.rateCents / 200);
+        const mileageCents = p.mileageMinimumVersion === 1 && minimumUnits <= 96 * 200 && initialMileageCents < 4500
+            ? 4500 + (p.backhaul ? Math.round(additionalUnits * p.rateCents / 100) : 0) : normalMileageCents;
         const backhaulCents = p.backhaul ? BACKHAUL : 0;
         const numeroParadas = stops(p.numeroParadas), additionalStops = numeroParadas - 1, stopBonusCents = additionalStops * 2000;
         return { originalMiles: p.originalMiles, additionalMiles: additionalUnits / 100,

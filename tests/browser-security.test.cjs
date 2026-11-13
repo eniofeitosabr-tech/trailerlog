@@ -81,6 +81,9 @@ async function main() {
         if (missingHandlers && relative === 'auth-page.js') { response.writeHead(404).end(); return; }
         try {
             let data = await fs.readFile(file);
+            // This suite simulates Auth, not sync RPCs. Keep its legacy/local payment
+            // fixtures independent from the production dailySync setting.
+            if (relative === 'supabase-config.js') data = Buffer.concat([data, Buffer.from('\nwindow.TRAILER_SUPABASE_CONFIG = { ...window.TRAILER_SUPABASE_CONFIG, dailySync: false };')]);
             if (tamperSDK && relative === 'vendor/supabase-js/supabase-2.118.0.js') data = Buffer.concat([data, Buffer.from('\n// fixture adulterada')]);
             const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.jpg': 'image/jpeg' }[path.extname(file)];
             response.writeHead(200, { 'Content-Type': mime + '; charset=utf-8', 'Cache-Control': 'no-store' }).end(data);
@@ -233,6 +236,12 @@ async function main() {
             await normal.waitFor('!TrailerAuth.verificationPending && !document.querySelector(".app-layout").hidden');
             assert(await normal.evaluate('getComputedStyle(document.getElementById("modalSucesso")).display === "none"'));
             assert.equal(normal.tokens(), 2);
+            for (const [locale, amount] of [['en', 'US$45.00'], ['pt', 'US$ 45,00']]) {
+                await normal.evaluate(`document.querySelector('[data-pay-language]').value='${locale}';document.querySelector('[data-pay-language]').dispatchEvent(new Event('change'));true`);
+                assert.equal(await normal.evaluate('document.getElementById("startPayoriginal").value'), '0');
+                assert(await normal.evaluate(`document.getElementById('startPaypreview').textContent.includes('${amount}')`),
+                    'Initial zero-mile preview must include the minimum in ' + locale);
+            }
         } finally { await normal.close(); }
         tamperSDK = true;
         const tampered = await tab();

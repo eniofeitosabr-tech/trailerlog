@@ -30,6 +30,16 @@ const journey = (id, date, payment = {}) => ({ id, truck: 'TRUCK-1', trailer: 'T
     pagamento: { ...base, localDate: date, ...payment } });
 async function main() {
     const env = environment(), p = env.pay;
+    // Regression: initial minimum survives return miles, storage reload and backup.
+    const regressionEnv = environment();
+    const regressionJourney = journey('backhaul-minimum', '2026-11-09');
+    regressionJourney.pagamento = p.create({ ...base, originalMiles: 98, backhaul: true,
+        destination: 'SYNTHETIC', additionalBackhaulMiles: 72 }, regressionJourney, { rateCents: 65 });
+    await regressionEnv.store.change(d => { d.jornadasSalvas.push(regressionJourney); });
+    const reloaded = environment(regressionEnv.map).store.read().data;
+    assert.equal(p.calculate(reloaded.jornadasSalvas[0].pagamento).totalCents, 14330);
+    assert.equal(p.report(reloaded, '2026-11-09', '2026-11-09').totals.totalCents, 14330);
+    assert.equal(p.calculate(JSON.parse(JSON.stringify(reloaded)).jornadasSalvas[0].pagamento).totalCents, 14330);
     assert.equal(p.calculate(base).payableMiles, 100);
     assert.equal(p.calculate(base).mileageCents, 6500);
     assert.equal(p.calculate(base).totalCents, 6500);
